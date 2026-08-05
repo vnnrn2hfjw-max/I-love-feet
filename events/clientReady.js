@@ -1,8 +1,11 @@
 module.exports = {
+    name: "clientReady",
+    once: true,
 
-name: "ready",
-
-once: true,
+    execute(client) {
+        console.log(`🔥 NSC BOT ONLINE: ${client.user.tag}`);
+    }
+};
 
 execute(client){
 
