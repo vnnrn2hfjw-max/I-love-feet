@@ -17,37 +17,46 @@ const client = new Client({
     ]
 });
 
+
 client.commands = new Collection();
 
-// Load Commands
-const commandFiles = fs
-    .readdirSync("./commands")
-    .filter(file => file.endsWith(".js"));
 
-for (const file of commandFiles) {
+for (const file of fs.readdirSync("./commands").filter(f => f.endsWith(".js"))) {
+
     const command = require(`./commands/${file}`);
 
-    if ("data" in command && "execute" in command) {
-        client.commands.set(command.data.name, command);
-        console.log(`✅ Loaded command: ${command.data.name}`);
-    } else {
-        console.log(`⚠️ ${file} is missing "data" or "execute".`);
-    }
+    client.commands.set(
+        command.data.name,
+        command
+    );
+
+    console.log(`Loaded command: ${command.data.name}`);
 }
 
-// Load Events
-const eventFiles = fs
-    .readdirSync("./events")
-    .filter(file => file.endsWith(".js"));
 
-for (const file of eventFiles) {
+
+for (const file of fs.readdirSync("./events").filter(f => f.endsWith(".js"))) {
+
     const event = require(`./events/${file}`);
 
-    if (event.once) {
-        client.once(event.name, (...args) => event.execute(...args, client));
+    if(event.once){
+
+        client.once(
+            event.name,
+            (...args)=>event.execute(...args, client)
+        );
+
     } else {
-        client.on(event.name, (...args) => event.execute(...args, client));
+
+        client.on(
+            event.name,
+            (...args)=>event.execute(...args, client)
+        );
+
     }
+
 }
+
+
 
 client.login(process.env.TOKEN);
