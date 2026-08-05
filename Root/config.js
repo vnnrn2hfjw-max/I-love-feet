@@ -1,36 +1,109 @@
+// ======================
+// ⚙️ NSC BOT CONFIG
+// ======================
+
 module.exports = {
-  // Server
+
+
+  // ======================
+  // 🤖 BOT SETTINGS
+  // ======================
+
+  CLIENT_ID: process.env.CLIENT_ID,
+
   GUILD_ID: process.env.GUILD_ID,
 
-  // Colors
+
+  // ======================
+  // 🎨 COLORS
+  // ======================
+
   COLORS: {
+
     PRIMARY: "#8B0000",
-    SUCCESS: "#00C853",
-    ERROR: "#D50000",
-    WARNING: "#FFD600"
+
+    BLACK: "#000000",
+
+    SUCCESS: "#00FF00",
+
+    ERROR: "#FF0000",
+
+    WARNING: "#FFA500"
+
   },
 
-  // Categories
-  CATEGORIES: {
-    TICKETS: ""
+
+  // ======================
+  // 🎟️ TICKET SYSTEM
+  // ======================
+
+  TICKETS: {
+
+    CATEGORY: "1502731974513786961",
+
+    LOG_CHANNEL: "1509800744767721503"
+
   },
 
-  // Channels
-  CHANNELS: {
-    LOGS: "",
-    GIVEAWAYS: "",
-    STAFF_LOGS: ""
+
+  // ======================
+  // 🎁 GIVEAWAY SYSTEM
+  // ======================
+
+  GIVEAWAYS: {
+
+    USE_COMMAND_CHANNEL: true
+
   },
 
-  // Roles
+
+  // ======================
+  // 🔨 STAFF PUNISH SYSTEM
+  // ======================
+
+  STAFF_PUNISH: {
+
+    LOG_CHANNEL: "1530207356552482896",
+
+    ADMIN_ROLE: "1530874760110805082"
+
+  },
+
+
+  // ======================
+  // 🎭 NSC ROLES
+  // ======================
+
   ROLES: {
-    ADMIN: "",
-    STAFF: "",
-    BUYER: "",
-    GIVEAWAY: ""
+
+    FOUNDER: "1526243744289128528",
+
+    OWNER: "1502707190358605884",
+
+    STAFF_PUNISH_ADMIN: "1530874760110805082",
+
+    STAFF: "1502708624487616684",
+
+    TRUSTED_SELLER: "1502723065795051693",
+
+    MEMBER: "1502718828965265499"
+
   },
 
-  // Bot
-  EMBED_FOOTER: "NSC • No Second Chances",
-  EMBED_ICON: ""
+
+  // ======================
+  // 🔴 NSC BRANDING
+  // ======================
+
+  BRANDING: {
+
+    NAME: "NSC | No Second Chances",
+
+    FOOTER: "NSC Management System",
+
+    ICON: "https://cdn.discordapp.com/attachments/1502687087584084041/1534487911024558241/standard_5.gif"
+
+  }
+
+
 };
