@@ -1,83 +1,53 @@
 require("dotenv").config();
 
 const {
-  Client,
-  GatewayIntentBits,
-  Collection
+    Client,
+    GatewayIntentBits,
+    Collection
 } = require("discord.js");
 
 const fs = require("fs");
 
-
 const client = new Client({
-
-  intents: [
-
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-
-  ]
-
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent
+    ]
 });
-
 
 client.commands = new Collection();
 
-
-// Load commands
-
-const commandFiles = fs.readdirSync("./commands")
-.filter(file => file.endsWith(".js"));
-
+// Load Commands
+const commandFiles = fs
+    .readdirSync("./commands")
+    .filter(file => file.endsWith(".js"));
 
 for (const file of commandFiles) {
+    const command = require(`./commands/${file}`);
 
-  const command = require(`./commands/${file}`);
-
-  if(command.data){
-
-    client.commands.set(
-      command.data.name,
-      command
-    );
-
-  }
-
+    if ("data" in command && "execute" in command) {
+        client.commands.set(command.data.name, command);
+        console.log(`✅ Loaded command: ${command.data.name}`);
+    } else {
+        console.log(`⚠️ ${file} is missing "data" or "execute".`);
+    }
 }
 
-
-// Load events
-
-const eventFiles = fs.readdirSync("./events")
-.filter(file => file.endsWith(".js"));
-
+// Load Events
+const eventFiles = fs
+    .readdirSync("./events")
+    .filter(file => file.endsWith(".js"));
 
 for (const file of eventFiles) {
+    const event = require(`./events/${file}`);
 
-  const event = require(`./events/${file}`);
-
-  if(event.once){
-
-    client.once(
-      event.name,
-      (...args) => event.execute(...args, client)
-    );
-
-  } else {
-
-    client.on(
-      event.name,
-      (...args) => event.execute(...args, client)
-    );
-
-  }
-
+    if (event.once) {
+        client.once(event.name, (...args) => event.execute(...args, client));
+    } else {
+        client.on(event.name, (...args) => event.execute(...args, client));
+    }
 }
 
-
-
-client.login(
-  process.env.TOKEN
-);
+client.login(process.env.TOKEN);
