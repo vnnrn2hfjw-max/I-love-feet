@@ -35,12 +35,12 @@ function loadGiveaways(){
 
   }
 
-
   return JSON.parse(
     fs.readFileSync(FILE,"utf8")
   );
 
 }
+
 
 
 function saveGiveaways(data){
@@ -60,8 +60,9 @@ function saveGiveaways(data){
 }
 
 
+
 // ======================
-// 🎁 GIVEAWAY COMMAND
+// 🎁 GIVEAWAY SYSTEM
 // ======================
 
 module.exports = {
@@ -130,19 +131,27 @@ option
 
 .setRequired(true)
 
+.setMinValue(1)
+
 )
 
 ),
 
 
 
+// ======================
+// 🎁 CREATE
+// ======================
+
 async execute(interaction){
 
 
 if(
+
 !interaction.member.permissions.has(
 PermissionFlagsBits.ManageGuild
 )
+
 ){
 
 return interaction.reply({
@@ -155,14 +164,6 @@ ephemeral:true
 });
 
 }
-
-
-
-if(
-interaction.options.getSubcommand()
-!=="create"
-)
-return;
 
 
 
@@ -219,8 +220,12 @@ entries:[],
 end:
 Date.now()+time,
 
-host:
-interaction.user.id
+ended:false,
+
+channel:
+interaction.channel.id,
+
+message:null
 
 };
 
@@ -269,7 +274,9 @@ config.COLORS.PRIMARY
 
 ━━━━━━━━━━━━━━
 
-Click below to enter!
+🎉 Click the button below to enter!
+
+━━━━━━━━━━━━━━
 
 `)
 
@@ -281,7 +288,9 @@ config.BRANDING.FOOTER,
 iconURL:
 config.BRANDING.ICON
 
-});
+})
+
+.setTimestamp();
 
 
 
@@ -296,7 +305,7 @@ new ButtonBuilder()
 )
 
 .setLabel(
-"🎉 Enter"
+"🎉 Enter Giveaway"
 )
 
 .setStyle(
@@ -317,19 +326,133 @@ ephemeral:true
 });
 
 
-interaction.channel.send({
 
-embeds:[
-embed
-],
+const message =
+await interaction.channel.send({
 
-components:[
-button
-]
+embeds:[embed],
+
+components:[button]
+
+});
+
+
+
+giveaway.message =
+message.id;
+
+
+
+saveGiveaways(
+giveaways
+);
+
+
+},
+
+
+
+// ======================
+// 🎉 ENTER BUTTON
+// ======================
+
+async buttonHandler(interaction){
+
+
+const id =
+interaction.customId.replace(
+"giveaway_",
+""
+);
+
+
+
+const giveaways =
+loadGiveaways();
+
+
+
+const giveaway =
+giveaways.find(
+g => g.id === id
+);
+
+
+
+if(!giveaway){
+
+return interaction.reply({
+
+content:
+"❌ Giveaway not found.",
+
+ephemeral:true
+
+});
+
+}
+
+
+
+if(giveaway.ended){
+
+return interaction.reply({
+
+content:
+"❌ Giveaway ended.",
+
+ephemeral:true
+
+});
+
+}
+
+
+
+if(
+giveaway.entries.includes(
+interaction.user.id
+)
+
+){
+
+return interaction.reply({
+
+content:
+"⚠️ You already entered.",
+
+ephemeral:true
+
+});
+
+}
+
+
+
+giveaway.entries.push(
+interaction.user.id
+);
+
+
+
+saveGiveaways(
+giveaways
+);
+
+
+
+return interaction.reply({
+
+content:
+"🎉 You entered the NSC Giveaway! Good luck 🔴⚫",
+
+ephemeral:true
 
 });
 
 
 }
+
+
 
 };
