@@ -14,9 +14,11 @@ const {
 
 const config = require("../config");
 
+const { createTranscript } = require("../utils/transcript");
+
 
 // ======================
-// 🎟️ TICKET COMMAND
+// 🎟️ TICKET SYSTEM
 // ======================
 
 module.exports = {
@@ -31,6 +33,10 @@ data: new SlashCommandBuilder()
 ),
 
 
+
+// ======================
+// 🎟️ CREATE PANEL
+// ======================
 
 async execute(interaction){
 
@@ -51,22 +57,23 @@ config.COLORS.PRIMARY
 
 Welcome to **NSC | No Second Chances**
 
-Choose a ticket category below.
+Choose a category below:
 
-🟢 Free Access
+🟢 **Free Access**
 > Apply to join NSC
 
-💰 Buyer
+💰 **Buyer**
 > Purchases and services
 
-🛠️ Support
+🛠️ **Support**
 > Questions and reports
 
-🎁 Giveaway Claim
+🎁 **Giveaway Claim**
 > Claim rewards
 
-🤝 Alliance
+🤝 **Alliance**
 > Partnership requests
+
 
 ━━━━━━━━━━━━━━
 
@@ -88,41 +95,67 @@ config.BRANDING.ICON
 
 
 
-const row = new ActionRowBuilder()
+const row1 = new ActionRowBuilder()
 
 .addComponents(
 
 new ButtonBuilder()
 
-.setCustomId("ticket_free")
+.setCustomId(
+"ticket_free"
+)
 
-.setLabel("Free Access")
+.setLabel(
+"Free Access"
+)
 
-.setEmoji("🟢")
+.setEmoji(
+"🟢"
+)
 
-.setStyle(ButtonStyle.Success),
+.setStyle(
+ButtonStyle.Success
+),
 
-
-new ButtonBuilder()
-
-.setCustomId("ticket_buyer")
-
-.setLabel("Buyer")
-
-.setEmoji("💰")
-
-.setStyle(ButtonStyle.Primary),
 
 
 new ButtonBuilder()
 
-.setCustomId("ticket_support")
+.setCustomId(
+"ticket_buyer"
+)
 
-.setLabel("Support")
+.setLabel(
+"Buyer"
+)
 
-.setEmoji("🛠️")
+.setEmoji(
+"💰"
+)
 
-.setStyle(ButtonStyle.Secondary)
+.setStyle(
+ButtonStyle.Primary
+),
+
+
+
+new ButtonBuilder()
+
+.setCustomId(
+"ticket_support"
+)
+
+.setLabel(
+"Support"
+)
+
+.setEmoji(
+"🛠️"
+)
+
+.setStyle(
+ButtonStyle.Secondary
+)
 
 );
 
@@ -134,24 +167,41 @@ const row2 = new ActionRowBuilder()
 
 new ButtonBuilder()
 
-.setCustomId("ticket_giveaway")
+.setCustomId(
+"ticket_giveaway"
+)
 
-.setLabel("Giveaway")
+.setLabel(
+"Giveaway"
+)
 
-.setEmoji("🎁")
+.setEmoji(
+"🎁"
+)
 
-.setStyle(ButtonStyle.Success),
+.setStyle(
+ButtonStyle.Success
+),
+
 
 
 new ButtonBuilder()
 
-.setCustomId("ticket_alliance")
+.setCustomId(
+"ticket_alliance"
+)
 
-.setLabel("Alliance")
+.setLabel(
+"Alliance"
+)
 
-.setEmoji("🤝")
+.setEmoji(
+"🤝"
+)
 
-.setStyle(ButtonStyle.Primary)
+.setStyle(
+ButtonStyle.Primary
+)
 
 );
 
@@ -159,10 +209,12 @@ new ButtonBuilder()
 
 await interaction.reply({
 
-embeds:[embed],
+embeds:[
+embed
+],
 
 components:[
-row,
+row1,
 row2
 ]
 
@@ -181,7 +233,98 @@ async buttonHandler(interaction){
 
 
 
-if(!interaction.customId.startsWith("ticket_"))
+// CLAIM
+
+if(
+interaction.customId === "ticket_claim"
+){
+
+
+return interaction.reply({
+
+content:
+`✋ Ticket claimed by ${interaction.user}`
+
+});
+
+
+}
+
+
+
+// CLOSE
+
+if(
+interaction.customId === "ticket_close"
+){
+
+
+const file =
+await createTranscript(
+interaction.channel
+);
+
+
+
+const logChannel =
+interaction.guild.channels.cache.get(
+config.TICKETS.LOG_CHANNEL
+);
+
+
+
+if(logChannel){
+
+
+await logChannel.send({
+
+content:
+
+`🔒 Ticket closed by ${interaction.user}`,
+
+files:[
+file
+]
+
+});
+
+
+}
+
+
+
+await interaction.reply({
+
+content:
+"🔒 Closing ticket..."
+
+});
+
+
+
+setTimeout(()=>{
+
+interaction.channel.delete()
+.catch(()=>{});
+
+},3000);
+
+
+
+return;
+
+}
+
+
+
+// CREATE TICKET
+
+if(
+!interaction.customId.startsWith(
+"ticket_"
+)
+)
+
 return;
 
 
@@ -196,34 +339,47 @@ interaction.customId.replace(
 
 const names = {
 
-free:"🟢 Free Access",
+free:
+"🟢 Free Access",
 
-buyer:"💰 Buyer",
+buyer:
+"💰 Buyer",
 
-support:"🛠️ Support",
+support:
+"🛠️ Support",
 
-giveaway:"🎁 Giveaway",
+giveaway:
+"🎁 Giveaway Claim",
 
-alliance:"🤝 Alliance"
+alliance:
+"🤝 Alliance"
 
 };
 
 
 
-const channel = await interaction.guild.channels.create({
+const channel =
+
+await interaction.guild.channels.create({
 
 name:
 
-`${type}-${interaction.user.username}`,
+`${type}-${interaction.user.username}`
+
+.toLowerCase(),
 
 type:
+
 ChannelType.GuildText,
 
+
 parent:
+
 config.TICKETS.CATEGORY,
 
 
 permissionOverwrites:[
+
 
 {
 
@@ -231,10 +387,13 @@ id:
 interaction.guild.id,
 
 deny:[
+
 PermissionFlagsBits.ViewChannel
+
 ]
 
 },
+
 
 
 {
@@ -251,6 +410,7 @@ PermissionFlagsBits.SendMessages
 ]
 
 },
+
 
 
 {
@@ -295,6 +455,16 @@ A staff member will assist you soon.
 
 `)
 
+.setFooter({
+
+text:
+config.BRANDING.FOOTER,
+
+iconURL:
+config.BRANDING.ICON
+
+})
+
 .setTimestamp();
 
 
@@ -305,24 +475,41 @@ const buttons = new ActionRowBuilder()
 
 new ButtonBuilder()
 
-.setCustomId("ticket_claim")
+.setCustomId(
+"ticket_claim"
+)
 
-.setLabel("Claim")
+.setLabel(
+"Claim"
+)
 
-.setEmoji("✋")
+.setEmoji(
+"✋"
+)
 
-.setStyle(ButtonStyle.Success),
+.setStyle(
+ButtonStyle.Success
+),
+
 
 
 new ButtonBuilder()
 
-.setCustomId("ticket_close")
+.setCustomId(
+"ticket_close"
+)
 
-.setLabel("Close")
+.setLabel(
+"Close"
+)
 
-.setEmoji("🔒")
+.setEmoji(
+"🔒"
+)
 
-.setStyle(ButtonStyle.Danger)
+.setStyle(
+ButtonStyle.Danger
+)
 
 );
 
@@ -334,9 +521,13 @@ content:
 
 `${interaction.user} <@&${config.ROLES.STAFF}>`,
 
-embeds:[embed],
+embeds:[
+embed
+],
 
-components:[buttons]
+components:[
+buttons
+]
 
 });
 
@@ -354,5 +545,6 @@ ephemeral:true
 
 
 }
+
 
 };
