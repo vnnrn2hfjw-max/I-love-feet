@@ -17,47 +17,36 @@ const {
 const CATEGORY_ID = "1502731974513786961";
 
 
-const ROLES = {
-
-    STAFF: "1502708624487616684",
-    OWNER: "1502707190358605884",
-    FOUNDER: "1526243744289128528",
-    TRUSTED: "1502723065795051693"
-
-};
-
-
-
 const TYPES = {
 
     buyer: {
         name: "Buyer Ticket",
         emoji: "💰",
-        role: ROLES.TRUSTED
+        role: "1502723065795051693"
     },
 
     support: {
         name: "Support Ticket",
         emoji: "🛠️",
-        role: ROLES.STAFF
+        role: "1502708624487616684"
     },
 
     join: {
         name: "Join NSC",
         emoji: "🪖",
-        role: ROLES.STAFF
+        role: "1502708624487616684"
     },
 
     alliance: {
         name: "Alliance Ticket",
         emoji: "🤝",
-        role: ROLES.STAFF
+        role: "1502708624487616684"
     },
 
     report: {
         name: "Report Ticket",
         emoji: "🚨",
-        role: ROLES.STAFF
+        role: "1502708624487616684"
     }
 
 };
@@ -72,11 +61,7 @@ async function createTicket(interaction, type) {
 
 
     if (!ticket) {
-
-        throw new Error(
-            "Invalid ticket type"
-        );
-
+        throw new Error("Invalid ticket type");
     }
 
 
@@ -98,12 +83,178 @@ async function createTicket(interaction, type) {
     "No information provided.";
 
 
-
-    if (
-        interaction.fields
-    ) {
+    if (interaction.fields) {
 
         info =
         [...interaction.fields.fields.values()]
-        .map(
-            x
+        .map(field =>
+            `**${field.customId}**\n${field.value}`
+        )
+        .join("\n\n");
+
+    }
+
+
+
+    const channel =
+    await interaction.guild.channels.create({
+
+        name:
+        `${ticket.emoji}-${getChannelName(type)}`,
+
+        type:
+        ChannelType.GuildText,
+
+        parent:
+        CATEGORY_ID,
+
+
+        permissionOverwrites:[
+
+            {
+                id:
+                interaction.guild.id,
+
+                deny:[
+                    PermissionFlagsBits.ViewChannel
+                ]
+            },
+
+            {
+                id:
+                interaction.user.id,
+
+                allow:[
+
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ReadMessageHistory
+
+                ]
+            },
+
+            {
+                id:
+                ticket.role,
+
+                allow:[
+
+                    PermissionFlagsBits.ViewChannel,
+                    PermissionFlagsBits.SendMessages,
+                    PermissionFlagsBits.ReadMessageHistory
+
+                ]
+            }
+
+        ]
+
+    });
+
+
+
+    addOpenTicket(
+        interaction.user.id,
+        channel.id,
+        type
+    );
+
+
+
+    const embed =
+    new EmbedBuilder()
+
+    .setColor("#8B0000")
+
+    .setTitle(
+        `${ticket.emoji} ${ticket.name}`
+    )
+
+    .setDescription(
+
+`Welcome ${interaction.user}
+
+Staff will assist you soon.
+
+━━━━━━━━━━━━━━
+
+${info}
+
+━━━━━━━━━━━━━━`
+
+    )
+
+    .setTimestamp();
+
+
+
+    const buttons =
+    new ActionRowBuilder()
+    .addComponents(
+
+        new ButtonBuilder()
+
+        .setCustomId(
+            "ticket_claim"
+        )
+
+        .setLabel(
+            "Claim"
+        )
+
+        .setEmoji(
+            "🟢"
+        )
+
+        .setStyle(
+            ButtonStyle.Success
+        ),
+
+
+        new ButtonBuilder()
+
+        .setCustomId(
+            "ticket_close"
+        )
+
+        .setLabel(
+            "Close"
+        )
+
+        .setEmoji(
+            "🔴"
+        )
+
+        .setStyle(
+            ButtonStyle.Danger
+        )
+
+    );
+
+
+
+    await channel.send({
+
+        content:
+        `<@&${ticket.role}> ${interaction.user}`,
+
+        embeds:[
+            embed
+        ],
+
+        components:[
+            buttons
+        ]
+
+    });
+
+
+
+    return channel;
+
+}
+
+
+
+module.exports = {
+    createTicket
+};
