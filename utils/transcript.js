@@ -2,7 +2,10 @@ const fs = require("fs");
 const path = require("path");
 
 
-async function createTranscript(channel) {
+async function createTranscript(
+    channel,
+    extraData = {}
+) {
 
     const messages = await channel.messages.fetch({
         limit: 100
@@ -11,20 +14,25 @@ async function createTranscript(channel) {
 
     const sortedMessages =
         [...messages.values()]
-            .sort(
-                (a, b) =>
-                    a.createdTimestamp -
-                    b.createdTimestamp
-            );
+        .sort(
+            (a, b) =>
+            a.createdTimestamp -
+            b.createdTimestamp
+        );
 
 
     let transcript = "";
 
-    transcript += `
-NSC | No Second Chances
-Ticket Transcript
 
-Channel:
+    transcript += `
+================================
+
+NSC | NO SECOND CHANCES
+TICKET TRANSCRIPT
+
+================================
+
+Ticket:
 ${channel.name}
 
 Created:
@@ -32,36 +40,115 @@ ${new Date(
     channel.createdTimestamp
 ).toLocaleString()}
 
-━━━━━━━━━━━━━━━━━━━━
+Closed:
+${new Date().toLocaleString()}
+
+Opened By:
+${extraData.openedBy || "Unknown"}
+
+Claimed By:
+${extraData.claimedBy || "Nobody"}
+
+Closed By:
+${extraData.closedBy || "Unknown"}
+
+Close Reason:
+${extraData.reason || "No reason provided"}
+
+================================
+
 
 `;
+
 
 
     for (const message of sortedMessages) {
 
-        transcript +=
-`${message.author.tag}
-${message.content || "[No text]"}
+
+        transcript += `
+--------------------------------
+
+User:
+${message.author.tag}
+
+ID:
+${message.author.id}
+
+Time:
+${new Date(
+    message.createdTimestamp
+).toLocaleString()}
+
+
+Message:
+
+${message.content || "[No message content]"}
 
 `;
+
 
         if (message.attachments.size > 0) {
 
-            transcript +=
-`Attachments:
-${[...message.attachments.values()]
-.map(a => a.url)
-.join("\n")}
+            transcript += `
+
+Attachments:
 
 `;
+
+            message.attachments.forEach(file => {
+
+                transcript +=
+`${file.url}
+
+`;
+
+            });
+
+        }
+
+
+        if (message.embeds.length > 0) {
+
+            transcript += `
+
+Embeds:
+
+`;
+
+            message.embeds.forEach(embed => {
+
+                if (embed.title) {
+
+                    transcript +=
+`Title: ${embed.title}
+`;
+
+                }
+
+
+                if (embed.description) {
+
+                    transcript +=
+`Description:
+${embed.description}
+
+`;
+
+                }
+
+            });
 
         }
 
 
         transcript +=
-"━━━━━━━━━━━━━━━━━━━━\n";
+`
+--------------------------------
+
+`;
 
     }
+
 
 
     const folder =
@@ -81,11 +168,13 @@ ${[...message.attachments.values()]
     }
 
 
+
     const filePath =
         path.join(
             folder,
             `${channel.name}.txt`
         );
+
 
 
     fs.writeFileSync(
@@ -97,6 +186,7 @@ ${[...message.attachments.values()]
     return filePath;
 
 }
+
 
 
 module.exports = {
