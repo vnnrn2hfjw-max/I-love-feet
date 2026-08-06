@@ -11,100 +11,149 @@ const {
     removeOpenTicket
 } = require("./ticketCounter");
 
+const {
+    isTicket
+} = require("./isTicket");
+
+const {
+    createTranscript
+} = require("./transcript");
+
 
 const TICKET_LOGS = "1509800744767721503";
 
 
 const STAFF_ROLES = [
-    "1502708624487616684", // Staff Team
-    "1502707190358605884", // Owner
-    "1526243744289128528"  // Founder
+    "1502708624487616684",
+    "1502707190358605884",
+    "1526243744289128528"
 ];
 
 
-module.exports = async function closeTicket(interaction, modalSubmit = false) {
+module.exports = async function closeTicket(
+    interaction,
+    modalSubmit = false
+) {
 
 
-    // =========================
-    // OPEN CLOSE MODAL
-    // =========================
+    // OPEN MODAL
 
     if (!modalSubmit) {
 
+
         const modal =
             new ModalBuilder()
-                .setCustomId("close_ticket_modal")
-                .setTitle("Close Ticket");
+            .setCustomId(
+                "close_ticket_modal"
+            )
+            .setTitle(
+                "Close Ticket"
+            );
 
 
         const reason =
             new TextInputBuilder()
-                .setCustomId("close_reason")
-                .setLabel("Close Reason")
-                .setStyle(TextInputStyle.Paragraph)
-                .setPlaceholder(
-                    "Explain why this ticket is being closed..."
-                )
-                .setRequired(true);
+            .setCustomId(
+                "close_reason"
+            )
+            .setLabel(
+                "Close Reason"
+            )
+            .setStyle(
+                TextInputStyle.Paragraph
+            )
+            .setRequired(true);
 
 
-        const row =
+
+        modal.addComponents(
+
             new ActionRowBuilder()
-                .addComponents(reason);
+            .addComponents(
+                reason
+            )
 
-
-        modal.addComponents(row);
-
-
-        return interaction.showModal(modal);
-
-    }
-
-
-
-    // =========================
-    // HANDLE MODAL
-    // =========================
-
-    const member = interaction.member;
-
-
-    const hasPermission =
-        member.roles.cache.some(role =>
-            STAFF_ROLES.includes(role.id)
         );
 
 
-    if (!hasPermission) {
-
-        return interaction.reply({
-            content:
-                "❌ You do not have permission to close tickets.",
-            ephemeral: true
-        });
+        return interaction.showModal(
+            modal
+        );
 
     }
 
 
 
+    // CHECK TICKET
+
     const ticket =
-        getTicket(interaction.channel.id);
+        isTicket(
+            interaction.channel.id
+        );
 
 
     if (!ticket) {
 
         return interaction.reply({
+
             content:
-                "❌ This ticket was not found.",
-            ephemeral: true
+            "❌ This is not a ticket.",
+
+            ephemeral:true
+
         });
 
     }
 
 
-    const closeReason =
+
+    const allowed =
+        interaction.member.roles.cache.some(
+            role =>
+            STAFF_ROLES.includes(role.id)
+        );
+
+
+
+    if (!allowed) {
+
+        return interaction.reply({
+
+            content:
+            "❌ You cannot close tickets.",
+
+            ephemeral:true
+
+        });
+
+    }
+
+
+
+    const reason =
         interaction.fields.getTextInputValue(
             "close_reason"
+        );
+
+
+
+    const transcript =
+        await createTranscript(
+
+            interaction.channel,
+
+            {
+
+                openedBy:
+                `<@${ticket.userId}>`,
+
+                closedBy:
+                interaction.user.tag,
+
+                reason
+
+            }
+
         );
 
 
@@ -115,16 +164,20 @@ module.exports = async function closeTicket(interaction, modalSubmit = false) {
         );
 
 
-    const logEmbed =
+
+    const embed =
         new EmbedBuilder()
 
-            .setColor("#8B0000")
+        .setColor("#8B0000")
 
-            .setTitle("🔒 Ticket Closed")
+        .setTitle(
+            "🔒 Ticket Closed"
+        )
 
-            .setDescription(
-`**Ticket Type**
-${ticket.type}
+        .setDescription(
+
+`**Ticket**
+${interaction.channel.name}
 
 **Opened By**
 <@${ticket.userId}>
@@ -133,17 +186,26 @@ ${ticket.type}
 ${interaction.user}
 
 **Reason**
-${closeReason}`
-            )
+${reason}`
 
-            .setTimestamp();
+        )
+
+        .setTimestamp();
 
 
 
     if (logChannel) {
 
         await logChannel.send({
-            embeds: [logEmbed]
+
+            embeds:[
+                embed
+            ],
+
+            files:[
+                transcript
+            ]
+
         });
 
     }
@@ -155,10 +217,12 @@ ${closeReason}`
     );
 
 
+
     await interaction.reply({
+
         content:
-            "🔒 Ticket closed. Deleting channel...",
-        ephemeral: false
+        "🔒 Ticket closed. Transcript saved.",
+
     });
 
 
@@ -166,8 +230,9 @@ ${closeReason}`
     setTimeout(() => {
 
         interaction.channel.delete()
-            .catch(() => {});
+        .catch(() => {});
 
-    }, 5000);
+    },5000);
+
 
 };
