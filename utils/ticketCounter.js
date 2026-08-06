@@ -1,159 +1,147 @@
-const fs = require("fs");
-const path = require("path");
+module.exports = {
+
+name:"interactionCreate",
 
 
-const filePath = path.join(
-    __dirname,
-    "tickets.json"
+async execute(interaction,client){
+
+
+
+if(interaction.isChatInputCommand()){
+
+
+const command =
+client.commands.get(
+interaction.commandName
+);
+
+
+if(!command)return;
+
+
+try{
+
+await command.execute(
+interaction,
+client
+);
+
+
+}catch(err){
+
+console.error(err);
+
+}
+
+
+return;
+
+}
+
+
+
+
+if(
+interaction.isStringSelectMenu() &&
+interaction.customId==="ticket_select"
+){
+
+const {
+createTicketModal
+}=require("../utils/ticketModals");
+
+
+return interaction.showModal(
+
+createTicketModal(
+interaction.values[0]
+)
+
+);
+
+}
+
+
+
+
+
+if(
+interaction.isModalSubmit() &&
+interaction.customId.startsWith(
+"ticket_modal_"
+)
+){
+
+
+await interaction.deferReply({
+ephemeral:true
+});
+
+
+const type =
+interaction.customId.replace(
+"ticket_modal_",
+""
 );
 
 
 
-function loadTickets() {
-
-    if (!fs.existsSync(filePath)) {
-
-        fs.writeFileSync(
-            filePath,
-            JSON.stringify(
-                {
-                    counter: 0,
-                    tickets: []
-                },
-                null,
-                4
-            )
-        );
-
-    }
-
-
-    return JSON.parse(
-        fs.readFileSync(
-            filePath,
-            "utf8"
-        )
-    );
-
-}
+const {
+createTicket
+}=require("../utils/createTicket");
 
 
 
-function saveTickets(data) {
+try{
 
-    fs.writeFileSync(
-        filePath,
-        JSON.stringify(
-            data,
-            null,
-            4
-        )
-    );
+
+const channel =
+await createTicket(
+interaction,
+type
+);
+
+
+
+if(!channel){
+
+return interaction.editReply({
+
+content:
+"❌ You already have this ticket open."
+
+});
 
 }
 
 
 
-function getChannelName(type) {
+return interaction.editReply({
 
-    const data =
-        loadTickets();
+content:
+`✅ Ticket created: ${channel}`
 
-
-    data.counter++;
-
-
-    saveTickets(data);
+});
 
 
-    return `${type}-${String(data.counter).padStart(4, "0")}`;
+}catch(err){
 
-}
-
-
-
-function hasOpenTicket(userId, type) {
-
-    const data =
-        loadTickets();
+console.error(err);
 
 
-    return data.tickets.some(
-        ticket =>
-            ticket.userId === userId &&
-            ticket.type === type
-    );
+return interaction.editReply({
+
+content:
+"❌ Ticket creation failed."
+
+});
 
 }
 
 
-
-function addOpenTicket(
-    userId,
-    channelId,
-    type
-) {
-
-    const data =
-        loadTickets();
-
-
-    data.tickets.push({
-
-        userId,
-        channelId,
-        type,
-        createdAt: Date.now()
-
-    });
-
-
-    saveTickets(data);
-
 }
 
 
-
-function removeOpenTicket(channelId) {
-
-    const data =
-        loadTickets();
-
-
-    data.tickets =
-        data.tickets.filter(
-            ticket =>
-            ticket.channelId !== channelId
-        );
-
-
-    saveTickets(data);
-
 }
-
-
-
-function getTicket(channelId) {
-
-    const data =
-        loadTickets();
-
-
-    return data.tickets.find(
-        ticket =>
-        ticket.channelId === channelId
-    );
-
-}
-
-
-
-module.exports = {
-
-    getChannelName,
-    hasOpenTicket,
-    addOpenTicket,
-    removeOpenTicket,
-    getTicket
 
 };
