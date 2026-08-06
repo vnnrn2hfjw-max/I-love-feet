@@ -1,127 +1,110 @@
-const {
-    ModalBuilder,
-    TextInputBuilder,
-    TextInputStyle,
-    ActionRowBuilder
-} = require("discord.js");
+const fs = require("fs");
+const path = require("path");
 
 
-function createTicketModal(type) {
+const file =
+path.join(
+    __dirname,
+    "tickets.json"
+);
 
 
-    const modal =
-        new ModalBuilder()
-        .setCustomId(
-            `ticket_modal_${type}`
+
+function load() {
+
+    if (!fs.existsSync(file)) {
+
+        fs.writeFileSync(
+            file,
+            JSON.stringify({
+                counter: 0,
+                tickets: []
+            }, null, 4)
+        );
+
+    }
+
+
+    return JSON.parse(
+        fs.readFileSync(
+            file,
+            "utf8"
         )
-        .setTitle(
-            "NSC Ticket Form"
-        );
+    );
 
-
-    let questions = [];
-
-
-    switch(type) {
-
-
-        case "buyer":
-
-            questions = [
-                ["item", "What are you buying?"],
-                ["payment", "Payment method?"]
-            ];
-
-            break;
+}
 
 
 
-        case "support":
+function save(data) {
 
-            questions = [
-                ["issue", "Explain your issue"]
-            ];
+    fs.writeFileSync(
+        file,
+        JSON.stringify(
+            data,
+            null,
+            4
+        )
+    );
 
-            break;
-
-
-
-        case "join":
-
-            questions = [
-                ["roblox", "Roblox username"]
-            ];
-
-            break;
+}
 
 
 
-        case "alliance":
+function getChannelName(type) {
 
-            questions = [
-                ["gang", "Gang name"],
-                ["members", "Member count"]
-            ];
+    const data = load();
 
-            break;
+    data.counter++;
 
+    save(data);
 
+    return `${type}-${data.counter}`;
 
-        case "report":
-
-            questions = [
-                ["user", "Who are you reporting?"],
-                ["reason", "Reason for report"]
-            ];
-
-            break;
-
-    }
+}
 
 
 
-    for (const question of questions) {
+function hasOpenTicket(userId, type) {
 
+    const data = load();
 
-        const input =
-            new TextInputBuilder()
+    return data.tickets.some(
+        ticket =>
+        ticket.userId === userId &&
+        ticket.type === type
+    );
 
-            .setCustomId(
-                question[0]
-            )
-
-            .setLabel(
-                question[1]
-            )
-
-            .setStyle(
-                TextInputStyle.Paragraph
-            )
-
-            .setRequired(true);
+}
 
 
 
-        modal.addComponents(
+function addOpenTicket(
+    userId,
+    channelId,
+    type
+) {
 
-            new ActionRowBuilder()
-
-            .addComponents(
-                input
-            )
-
-        );
-
-    }
+    const data = load();
 
 
+    data.tickets.push({
 
-    return modal;
+        userId,
+        channelId,
+        type
+
+    });
+
+
+    save(data);
 
 }
 
 
 
 module.exports = {
-    createTicketModal
+    getChannelName,
+    hasOpenTicket,
+    addOpenTicket
 };
