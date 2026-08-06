@@ -18,19 +18,10 @@ const CATEGORY_ID = "1502731974513786961";
 
 
 const ROLES = {
-
-    FOUNDER:
-    "1526243744289128528",
-
-    OWNER:
-    "1502707190358605884",
-
-    STAFF:
-    "1502708624487616684",
-
-    TRUSTED_SELLER:
-    "1502723065795051693"
-
+    FOUNDER: "1526243744289128528",
+    OWNER: "1502707190358605884",
+    STAFF: "1502708624487616684",
+    TRUSTED_SELLER: "1502723065795051693"
 };
 
 
@@ -38,370 +29,272 @@ const ROLES = {
 const ticketTypes = {
 
     buyer: {
-
         emoji: "💰",
-
         name: "Buyer Ticket",
-
-        pingRole:
-        ROLES.TRUSTED_SELLER
-
+        pingRole: ROLES.TRUSTED_SELLER
     },
-
 
     support: {
-
         emoji: "🛠️",
-
         name: "Support Ticket",
-
-        pingRole:
-        ROLES.STAFF
-
+        pingRole: ROLES.STAFF
     },
-
 
     join: {
-
         emoji: "🪖",
-
         name: "Join NSC",
-
-        pingRole:
-        ROLES.STAFF
-
+        pingRole: ROLES.STAFF
     },
-
 
     alliance: {
-
         emoji: "🤝",
-
         name: "Alliance Ticket",
-
-        pingRole:
-        ROLES.STAFF
-
+        pingRole: ROLES.STAFF
     },
 
-
     report: {
-
         emoji: "🚨",
-
         name: "Report Ticket",
-
-        pingRole:
-        ROLES.STAFF
-
+        pingRole: ROLES.STAFF
     }
 
 };
 
 
 
-async function createTicket(
-    interaction,
-    type
-) {
+async function createTicket(interaction, type) {
 
 
-    const config =
-        ticketTypes[type];
+    try {
 
 
-    if (!config) {
+        const config = ticketTypes[type];
 
-        return interaction.editReply({
 
-            content:
-            "❌ Invalid ticket type."
+        if (!config) {
 
-        });
+            throw new Error(
+                "Invalid ticket type: " + type
+            );
 
-    }
+        }
 
 
 
-    if (
-        hasOpenTicket(
-            interaction.user.id,
-            type
-        )
-    ) {
-
-        return interaction.editReply({
-
-            content:
-            "❌ You already have this type of ticket open."
-
-        });
-
-    }
-
-
-
-    let answers =
-    "No information provided.";
-
-
-
-    if (
-        interaction.isModalSubmit()
-    ) {
-
-        const fields =
-        interaction.fields.fields;
-
-
-        answers =
-        [...fields.values()]
-        .map(field =>
-
-`**${field.customId}**
-${field.value}`
-
-        )
-        .join("\n\n");
-
-    }
-
-
-
-
-    const channelName =
-        `${config.emoji}-${getChannelName(type)}`;
-
-
-
-    const channel =
-    await interaction.guild.channels.create({
-
-        name:
-        channelName,
-
-        type:
-        ChannelType.GuildText,
-
-        parent:
-        CATEGORY_ID,
-
-
-        permissionOverwrites:[
-
-
-            {
-
-                id:
-                interaction.guild.roles.everyone.id,
-
-                deny:[
-                    PermissionFlagsBits.ViewChannel
-                ]
-
-            },
-
-
-            {
-
-                id:
+        if (
+            hasOpenTicket(
                 interaction.user.id,
+                type
+            )
+        ) {
 
-                allow:[
+            return interaction.editReply({
 
-                    PermissionFlagsBits.ViewChannel,
+                content:
+                "❌ You already have this ticket open."
 
-                    PermissionFlagsBits.SendMessages,
+            });
 
-                    PermissionFlagsBits.ReadMessageHistory
-
-                ]
-
-            },
-
-
-            {
-
-                id:
-                ROLES.FOUNDER,
-
-                allow:[
-
-                    PermissionFlagsBits.ViewChannel,
-
-                    PermissionFlagsBits.SendMessages
-
-                ]
-
-            },
-
-
-            {
-
-                id:
-                ROLES.OWNER,
-
-                allow:[
-
-                    PermissionFlagsBits.ViewChannel,
-
-                    PermissionFlagsBits.SendMessages
-
-                ]
-
-            },
-
-
-            {
-
-                id:
-                config.pingRole,
-
-                allow:[
-
-                    PermissionFlagsBits.ViewChannel,
-
-                    PermissionFlagsBits.SendMessages,
-
-                    PermissionFlagsBits.ReadMessageHistory
-
-                ]
-
-            }
-
-        ]
-
-    });
+        }
 
 
 
-    addOpenTicket(
+        let answers =
+        "No information provided.";
 
-        interaction.user.id,
 
-        channel.id,
 
-        type
+        if (interaction.isModalSubmit()) {
 
-    );
+            answers =
+            [...interaction.fields.fields.values()]
+            .map(field =>
+                `**${field.customId}**\n${field.value}`
+            )
+            .join("\n\n");
+
+        }
 
 
 
 
-    const embed =
-    new EmbedBuilder()
+        const channel =
+        await interaction.guild.channels.create({
 
-    .setColor("#8B0000")
+            name:
+            `${config.emoji}-${getChannelName(type)}`,
 
-    .setTitle(
-        `${config.emoji} ${config.name}`
-    )
+            type:
+            ChannelType.GuildText,
 
-    .setDescription(
+            parent:
+            CATEGORY_ID,
+
+
+            permissionOverwrites:[
+
+                {
+                    id:
+                    interaction.guild.id,
+
+                    deny:[
+                        PermissionFlagsBits.ViewChannel
+                    ]
+                },
+
+                {
+                    id:
+                    interaction.user.id,
+
+                    allow:[
+
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory
+
+                    ]
+                },
+
+                {
+                    id:
+                    ROLES.STAFF,
+
+                    allow:[
+
+                        PermissionFlagsBits.ViewChannel,
+                        PermissionFlagsBits.SendMessages,
+                        PermissionFlagsBits.ReadMessageHistory
+
+                    ]
+                }
+
+            ]
+
+        });
+
+
+
+        addOpenTicket(
+            interaction.user.id,
+            channel.id,
+            type
+        );
+
+
+
+
+        const embed =
+        new EmbedBuilder()
+
+        .setColor("#8B0000")
+
+        .setTitle(
+            `${config.emoji} ${config.name}`
+        )
+
+        .setDescription(
 
 `Welcome ${interaction.user}!
 
-A staff member will assist you soon.
+Staff will assist you soon.
 
 ━━━━━━━━━━━━━━
 
-👤 **User**
-${interaction.user}
-
-📂 **Type**
-${config.name}
-
-📋 **Information**
+📋 **Ticket Information**
 
 ${answers}
 
-━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━`
 
-NSC | No Second Chances`
-
-    )
-
-    .setTimestamp();
-
-
-
-
-
-    const buttons =
-    new ActionRowBuilder()
-
-    .addComponents(
-
-
-        new ButtonBuilder()
-
-        .setCustomId(
-            "ticket_claim"
         )
 
-        .setLabel(
-            "Claim"
-        )
-
-        .setEmoji(
-            "🟢"
-        )
-
-        .setStyle(
-            ButtonStyle.Success
-        ),
-
-
-
-        new ButtonBuilder()
-
-        .setCustomId(
-            "ticket_close"
-        )
-
-        .setLabel(
-            "Close"
-        )
-
-        .setEmoji(
-            "🔴"
-        )
-
-        .setStyle(
-            ButtonStyle.Danger
-        )
-
-    );
+        .setTimestamp();
 
 
 
 
+        const buttons =
+        new ActionRowBuilder()
+        .addComponents(
 
-    await channel.send({
+            new ButtonBuilder()
 
-        content:
-        `<@${config.pingRole}> ${interaction.user}`,
+            .setCustomId(
+                "ticket_claim"
+            )
 
-        embeds:[
-            embed
-        ],
+            .setLabel(
+                "Claim"
+            )
 
-        components:[
-            buttons
-        ]
+            .setEmoji(
+                "🟢"
+            )
 
-    });
+            .setStyle(
+                ButtonStyle.Success
+            ),
+
+
+            new ButtonBuilder()
+
+            .setCustomId(
+                "ticket_close"
+            )
+
+            .setLabel(
+                "Close"
+            )
+
+            .setEmoji(
+                "🔴"
+            )
+
+            .setStyle(
+                ButtonStyle.Danger
+            )
+
+        );
 
 
 
-    return channel;
+        await channel.send({
+
+            content:
+            `<@&${config.pingRole}> ${interaction.user}`,
+
+            embeds:[
+                embed
+            ],
+
+            components:[
+                buttons
+            ]
+
+        });
+
+
+
+        return channel;
+
+
+
+    } catch(error) {
+
+        console.error(
+            "CREATE TICKET ERROR:",
+            error
+        );
+
+
+        throw error;
+
+    }
 
 }
 
 
 
 module.exports = {
-
     createTicket
-
 };
