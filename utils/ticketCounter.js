@@ -1,147 +1,127 @@
+const {
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder
+} = require("discord.js");
+
+
+function createTicketModal(type) {
+
+
+    const modal =
+        new ModalBuilder()
+        .setCustomId(
+            `ticket_modal_${type}`
+        )
+        .setTitle(
+            "NSC Ticket Form"
+        );
+
+
+    let questions = [];
+
+
+    switch(type) {
+
+
+        case "buyer":
+
+            questions = [
+                ["item", "What are you buying?"],
+                ["payment", "Payment method?"]
+            ];
+
+            break;
+
+
+
+        case "support":
+
+            questions = [
+                ["issue", "Explain your issue"]
+            ];
+
+            break;
+
+
+
+        case "join":
+
+            questions = [
+                ["roblox", "Roblox username"]
+            ];
+
+            break;
+
+
+
+        case "alliance":
+
+            questions = [
+                ["gang", "Gang name"],
+                ["members", "Member count"]
+            ];
+
+            break;
+
+
+
+        case "report":
+
+            questions = [
+                ["user", "Who are you reporting?"],
+                ["reason", "Reason for report"]
+            ];
+
+            break;
+
+    }
+
+
+
+    for (const question of questions) {
+
+
+        const input =
+            new TextInputBuilder()
+
+            .setCustomId(
+                question[0]
+            )
+
+            .setLabel(
+                question[1]
+            )
+
+            .setStyle(
+                TextInputStyle.Paragraph
+            )
+
+            .setRequired(true);
+
+
+
+        modal.addComponents(
+
+            new ActionRowBuilder()
+
+            .addComponents(
+                input
+            )
+
+        );
+
+    }
+
+
+
+    return modal;
+
+}
+
+
+
 module.exports = {
-
-name:"interactionCreate",
-
-
-async execute(interaction,client){
-
-
-
-if(interaction.isChatInputCommand()){
-
-
-const command =
-client.commands.get(
-interaction.commandName
-);
-
-
-if(!command)return;
-
-
-try{
-
-await command.execute(
-interaction,
-client
-);
-
-
-}catch(err){
-
-console.error(err);
-
-}
-
-
-return;
-
-}
-
-
-
-
-if(
-interaction.isStringSelectMenu() &&
-interaction.customId==="ticket_select"
-){
-
-const {
-createTicketModal
-}=require("../utils/ticketModals");
-
-
-return interaction.showModal(
-
-createTicketModal(
-interaction.values[0]
-)
-
-);
-
-}
-
-
-
-
-
-if(
-interaction.isModalSubmit() &&
-interaction.customId.startsWith(
-"ticket_modal_"
-)
-){
-
-
-await interaction.deferReply({
-ephemeral:true
-});
-
-
-const type =
-interaction.customId.replace(
-"ticket_modal_",
-""
-);
-
-
-
-const {
-createTicket
-}=require("../utils/createTicket");
-
-
-
-try{
-
-
-const channel =
-await createTicket(
-interaction,
-type
-);
-
-
-
-if(!channel){
-
-return interaction.editReply({
-
-content:
-"❌ You already have this ticket open."
-
-});
-
-}
-
-
-
-return interaction.editReply({
-
-content:
-`✅ Ticket created: ${channel}`
-
-});
-
-
-}catch(err){
-
-console.error(err);
-
-
-return interaction.editReply({
-
-content:
-"❌ Ticket creation failed."
-
-});
-
-}
-
-
-}
-
-
-}
-
+    createTicketModal
 };
