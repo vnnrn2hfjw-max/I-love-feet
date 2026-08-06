@@ -1,125 +1,184 @@
-const fs = require("fs");
-const path = require("path");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    ActionRowBuilder,
+    StringSelectMenuBuilder
+} = require("discord.js");
 
-const dataFolder = path.join(__dirname, "..", "data");
-const dataFile = path.join(dataFolder, "tickets.json");
-
-function ensureFile() {
-    if (!fs.existsSync(dataFolder)) {
-        fs.mkdirSync(dataFolder, { recursive: true });
-    }
-
-    if (!fs.existsSync(dataFile)) {
-        fs.writeFileSync(
-            dataFile,
-            JSON.stringify(
-                {
-                    counter: 0,
-                    openTickets: []
-                },
-                null,
-                4
-            )
-        );
-    }
-}
-
-function loadData() {
-    ensureFile();
-
-    try {
-        return JSON.parse(fs.readFileSync(dataFile, "utf8"));
-    } catch {
-        return {
-            counter: 0,
-            openTickets: []
-        };
-    }
-}
-
-function saveData(data) {
-    fs.writeFileSync(dataFile, JSON.stringify(data, null, 4));
-}
-
-function nextTicketNumber() {
-    const data = loadData();
-
-    data.counter++;
-
-    saveData(data);
-
-    return data.counter.toString().padStart(4, "0");
-}
-
-function getChannelName(type) {
-    const number = nextTicketNumber();
-
-    switch (type) {
-        case "buyer":
-            return `buyer-${number}`;
-
-        case "support":
-            return `support-${number}`;
-
-        case "join":
-            return `join-${number}`;
-
-        case "alliance":
-            return `alliance-${number}`;
-
-        case "report":
-            return `report-${number}`;
-
-        default:
-            return `ticket-${number}`;
-    }
-}
-
-function hasOpenTicket(userId, type) {
-    const data = loadData();
-
-    return data.openTickets.some(
-        ticket =>
-            ticket.userId === userId &&
-            ticket.type === type
-    );
-}
-
-function addOpenTicket(userId, channelId, type) {
-    const data = loadData();
-
-    data.openTickets.push({
-        userId,
-        channelId,
-        type,
-        createdAt: Date.now()
-    });
-
-    saveData(data);
-}
-
-function removeOpenTicket(channelId) {
-    const data = loadData();
-
-    data.openTickets = data.openTickets.filter(
-        ticket => ticket.channelId !== channelId
-    );
-
-    saveData(data);
-}
-
-function getTicket(channelId) {
-    const data = loadData();
-
-    return data.openTickets.find(
-        ticket => ticket.channelId === channelId
-    );
-}
 
 module.exports = {
-    getChannelName,
-    hasOpenTicket,
-    addOpenTicket,
-    removeOpenTicket,
-    getTicket
+
+    data: new SlashCommandBuilder()
+
+        .setName("ticket")
+
+        .setDescription(
+            "Create an NSC ticket panel"
+        ),
+
+
+
+    async execute(interaction) {
+
+
+        const embed =
+            new EmbedBuilder()
+
+            .setColor("#8B0000")
+
+            .setTitle(
+                "🎟️ NSC Ticket System"
+            )
+
+            .setDescription(
+
+`Welcome to **NSC | No Second Chances**
+
+Choose the ticket type that matches your request.
+
+━━━━━━━━━━━━━━━━━━
+
+💰 **Buyer Ticket**
+For purchases and sellers.
+
+🛠️ **Support Ticket**
+For help and problems.
+
+🪖 **Join NSC**
+Apply to join NSC.
+
+🤝 **Alliance Ticket**
+Partnership requests.
+
+🚨 **Report Ticket**
+Report a player or issue.
+
+━━━━━━━━━━━━━━━━━━
+
+Our staff team will assist you as soon as possible.`
+
+            )
+
+            .setFooter({
+
+                text:
+                "NSC | No Second Chances"
+
+            })
+
+            .setTimestamp();
+
+
+
+        const menu =
+            new StringSelectMenuBuilder()
+
+            .setCustomId(
+                "ticket_select"
+            )
+
+            .setPlaceholder(
+                "Select a ticket type..."
+            )
+
+            .addOptions(
+
+                {
+                    label:
+                    "Buyer Ticket",
+
+                    description:
+                    "Purchase or seller help",
+
+                    value:
+                    "buyer",
+
+                    emoji:
+                    "💰"
+                },
+
+
+                {
+                    label:
+                    "Support Ticket",
+
+                    description:
+                    "Need help?",
+
+                    value:
+                    "support",
+
+                    emoji:
+                    "🛠️"
+                },
+
+
+                {
+                    label:
+                    "Join NSC",
+
+                    description:
+                    "Apply to join NSC",
+
+                    value:
+                    "join",
+
+                    emoji:
+                    "🪖"
+                },
+
+
+                {
+                    label:
+                    "Alliance Ticket",
+
+                    description:
+                    "Create an alliance",
+
+                    value:
+                    "alliance",
+
+                    emoji:
+                    "🤝"
+                },
+
+
+                {
+                    label:
+                    "Report Ticket",
+
+                    description:
+                    "Report a problem",
+
+                    value:
+                    "report",
+
+                    emoji:
+                    "🚨"
+                }
+
+            );
+
+
+
+        const row =
+            new ActionRowBuilder()
+            .addComponents(menu);
+
+
+
+        await interaction.reply({
+
+            embeds:[
+                embed
+            ],
+
+            components:[
+                row
+            ]
+
+        });
+
+    }
+
 };
