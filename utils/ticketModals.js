@@ -1,109 +1,82 @@
 const {
-    ChannelType,
-    PermissionFlagsBits,
-    EmbedBuilder,
-    ActionRowBuilder,
-    ButtonBuilder,
-    ButtonStyle
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder
 } = require("discord.js");
 
-const {
-    getChannelName,
-    hasOpenTicket,
-    addOpenTicket
-} = require("./ticketCounter");
+
+function createTicketModal(type) {
+
+    const modal = new ModalBuilder()
+        .setCustomId(`ticket_modal_${type}`)
+        .setTitle("NSC Ticket Form");
 
 
-const CATEGORY_ID = "1502731974513786961";
+    let questions = [];
 
 
-const ROLES = {
-
-    STAFF: "1502708624487616684",
-    OWNER: "1502707190358605884",
-    FOUNDER: "1526243744289128528",
-    TRUSTED: "1502723065795051693"
-
-};
-
-
-
-const TYPES = {
-
-    buyer: {
-        name: "Buyer Ticket",
-        emoji: "💰",
-        role: ROLES.TRUSTED
-    },
-
-    support: {
-        name: "Support Ticket",
-        emoji: "🛠️",
-        role: ROLES.STAFF
-    },
-
-    join: {
-        name: "Join NSC",
-        emoji: "🪖",
-        role: ROLES.STAFF
-    },
-
-    alliance: {
-        name: "Alliance Ticket",
-        emoji: "🤝",
-        role: ROLES.STAFF
-    },
-
-    report: {
-        name: "Report Ticket",
-        emoji: "🚨",
-        role: ROLES.STAFF
+    if (type === "buyer") {
+        questions = [
+            ["item", "What are you buying?"],
+            ["payment", "Payment method?"]
+        ];
     }
 
-};
+
+    if (type === "support") {
+        questions = [
+            ["issue", "Explain your issue"]
+        ];
+    }
+
+
+    if (type === "join") {
+        questions = [
+            ["roblox", "Roblox username"]
+        ];
+    }
+
+
+    if (type === "alliance") {
+        questions = [
+            ["gang", "Gang name"],
+            ["members", "Member count"]
+        ];
+    }
+
+
+    if (type === "report") {
+        questions = [
+            ["user", "Who are you reporting?"],
+            ["reason", "Reason"]
+        ];
+    }
 
 
 
-async function createTicket(interaction, type) {
+    for (const question of questions) {
+
+        const input = new TextInputBuilder()
+            .setCustomId(question[0])
+            .setLabel(question[1])
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
 
 
-    const ticket =
-        TYPES[type];
-
-
-    if (!ticket) {
-
-        throw new Error(
-            "Invalid ticket type"
+        modal.addComponents(
+            new ActionRowBuilder()
+                .addComponents(input)
         );
 
     }
 
 
+    return modal;
 
-    if (
-        hasOpenTicket(
-            interaction.user.id,
-            type
-        )
-    ) {
-
-        return false;
-
-    }
+}
 
 
-
-    let info =
-    "No information provided.";
-
-
-
-    if (
-        interaction.fields
-    ) {
-
-        info =
-        [...interaction.fields.fields.values()]
-        .map(
-            x
+module.exports = {
+    createTicketModal
+};
