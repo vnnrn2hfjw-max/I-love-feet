@@ -3,14 +3,12 @@ module.exports = {
     once: true,
 
     execute(client) {
-        console.log(`🔥 NSC BOT ONLINE: ${client.user.tag}`);
+        console.log(`
+=====================================
+🔥 NSC BOT V2 IS ONLINE
+👑 Logged in as: ${client.user.tag}
+📡 Commands Loaded: ${client.commands.size}
+=====================================
+`);
     }
-};
-
-execute(client){
-
-console.log(`🔥 NSC BOT ONLINE: ${client.user.tag}`);
-
-}
-
 };
