@@ -6,6 +6,11 @@ const {
     getTicket
 } = require("./ticketCounter");
 
+const {
+    isTicket
+} = require("./isTicket");
+
+
 const STAFF_ROLES = [
     "1502708624487616684", // Staff Team
     "1502707190358605884", // Owner
@@ -15,50 +20,69 @@ const STAFF_ROLES = [
 
 module.exports = async function claimTicket(interaction) {
 
-    const member = interaction.member;
-
-
-    const hasPermission =
-        member.roles.cache.some(role =>
-            STAFF_ROLES.includes(role.id)
-        );
-
-
-    if (!hasPermission) {
-
-        return interaction.reply({
-            content:
-                "❌ You do not have permission to claim tickets.",
-            ephemeral: true
-        });
-
-    }
-
 
     const ticket =
-        getTicket(interaction.channel.id);
+        isTicket(
+            interaction.channel.id
+        );
 
 
     if (!ticket) {
 
         return interaction.reply({
+
             content:
-                "❌ This is not a registered ticket.",
-            ephemeral: true
+            "❌ This is not a ticket.",
+
+            ephemeral:true
+
         });
 
     }
 
 
-    if (interaction.channel.topic?.includes("CLAIMED")) {
+
+    const allowed =
+        interaction.member.roles.cache.some(
+            role =>
+            STAFF_ROLES.includes(role.id)
+        );
+
+
+
+    if (!allowed) {
 
         return interaction.reply({
+
             content:
-                "❌ This ticket has already been claimed.",
-            ephemeral: true
+            "❌ You cannot claim tickets.",
+
+            ephemeral:true
+
         });
 
     }
+
+
+
+    if (
+        interaction.channel.topic &&
+        interaction.channel.topic.includes(
+            "CLAIMED"
+        )
+    ) {
+
+        return interaction.reply({
+
+            content:
+            "❌ This ticket is already claimed.",
+
+            ephemeral:true
+
+        });
+
+    }
+
 
 
     await interaction.channel.setTopic(
@@ -66,31 +90,38 @@ module.exports = async function claimTicket(interaction) {
     );
 
 
+
     const messages =
         await interaction.channel.messages.fetch({
-            limit: 10
+            limit:20
         });
 
 
+
     const ticketMessage =
-        messages.find(msg =>
-            msg.embeds.length > 0 &&
-            msg.components.length > 0
+        messages.find(
+            msg =>
+            msg.embeds.length &&
+            msg.components.length
         );
+
 
 
     if (ticketMessage) {
 
-        const oldEmbed =
-            ticketMessage.embeds[0];
+
+        const embed =
+            EmbedBuilder.from(
+                ticketMessage.embeds[0]
+            );
 
 
-        const newEmbed =
-            EmbedBuilder.from(oldEmbed)
-                .setDescription(
+
+        embed.setDescription(
+
 `Welcome <@${ticket.userId}>!
 
-A staff member is handling your ticket.
+A staff member is now handling your ticket.
 
 ━━━━━━━━━━━━━━━━━━
 
@@ -107,20 +138,28 @@ ${interaction.user}
 ${ticket.type}
 
 ━━━━━━━━━━━━━━━━━━`
-                );
+
+        );
+
 
 
         await ticketMessage.edit({
-            embeds: [newEmbed]
+
+            embeds:[
+                embed
+            ]
+
         });
 
     }
 
 
+
     await interaction.reply({
+
         content:
-            `🟢 Ticket claimed by ${interaction.user}.`,
-        ephemeral: false
+        `🟢 Ticket claimed by ${interaction.user}.`
+
     });
 
 };
