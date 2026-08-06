@@ -1,306 +1,57 @@
-module.exports = {
-    name: "interactionCreate",
+if (
+    interaction.isModalSubmit() &&
+    interaction.customId.startsWith("ticket_modal_")
+) {
 
-    async execute(interaction, client) {
 
+    const type =
+        interaction.customId.replace(
+            "ticket_modal_",
+            ""
+        );
 
-        // =========================
-        // SLASH COMMANDS
-        // =========================
 
-        if (interaction.isChatInputCommand()) {
+    await interaction.deferReply({
+        ephemeral:true
+    });
 
-            const command =
-                client.commands.get(
-                    interaction.commandName
-                );
 
 
-            if (!command) {
+    const {
+        createTicket
+    } = require("../utils/createTicket");
 
-                return interaction.reply({
-                    content:
-                    "❌ Command not found.",
-                    ephemeral: true
-                });
 
-            }
 
+    const channel =
+        await createTicket(
+            interaction,
+            type
+        );
 
-            try {
 
-                await command.execute(
-                    interaction,
-                    client
-                );
 
+    if (!channel) {
 
-            } catch (error) {
+        return interaction.editReply({
 
-                console.error(error);
+            content:
+            "❌ You already have this ticket open."
 
-
-                if (interaction.replied || interaction.deferred) {
-
-                    await interaction.followUp({
-
-                        content:
-                        "❌ Something went wrong while executing this command.",
-
-                        ephemeral:true
-
-                    });
-
-
-                } else {
-
-                    await interaction.reply({
-
-                        content:
-                        "❌ Something went wrong while executing this command.",
-
-                        ephemeral:true
-
-                    });
-
-                }
-
-            }
-
-
-            return;
-        }
-
-
-
-        // =========================
-        // TICKET DROPDOWN
-        // =========================
-
-        if (
-            interaction.isStringSelectMenu() &&
-            interaction.customId === "ticket_select"
-        ) {
-
-            try {
-
-                const {
-                    createTicketModal
-                } = require("../utils/ticketModals");
-
-
-                const modal =
-                    createTicketModal(
-                        interaction.values[0]
-                    );
-
-
-                await interaction.showModal(
-                    modal
-                );
-
-
-            } catch (error) {
-
-                console.error(error);
-
-
-                await interaction.reply({
-
-                    content:
-                    "❌ Failed to open ticket form.",
-
-                    ephemeral:true
-
-                });
-
-            }
-
-
-            return;
-        }
-
-
-
-        // =========================
-        // TICKET MODAL SUBMIT
-        // =========================
-
-        if (
-            interaction.isModalSubmit() &&
-            interaction.customId.startsWith(
-                "ticket_modal_"
-            )
-        ) {
-
-
-            try {
-
-                const type =
-                    interaction.customId.replace(
-                        "ticket_modal_",
-                        ""
-                    );
-
-
-                const {
-                    createTicket
-                } = require("../utils/createTicket");
-
-
-                await interaction.deferReply({
-                    ephemeral:true
-                });
-
-
-                await createTicket(
-                    interaction,
-                    type
-                );
-
-
-                await interaction.editReply({
-
-                    content:
-                    "✅ Ticket created!"
-
-                });
-
-
-            } catch(error) {
-
-                console.error(error);
-
-
-                if (!interaction.replied) {
-
-                    await interaction.reply({
-
-                        content:
-                        "❌ Failed to create ticket.",
-
-                        ephemeral:true
-
-                    });
-
-                }
-
-            }
-
-
-            return;
-        }
-
-
-
-        // =========================
-        // BUTTONS
-        // =========================
-
-        if (interaction.isButton()) {
-
-
-            try {
-
-
-                if (
-                    interaction.customId ===
-                    "ticket_claim"
-                ) {
-
-
-                    const claim =
-                        require("../utils/claimButton");
-
-
-                    return claim(
-                        interaction
-                    );
-
-                }
-
-
-
-                if (
-                    interaction.customId ===
-                    "ticket_close"
-                ) {
-
-
-                    const close =
-                        require("../utils/closeTicket");
-
-
-                    return close(
-                        interaction
-                    );
-
-                }
-
-
-
-                if (
-                    interaction.customId ===
-                    "staff_apply"
-                ) {
-
-                    const modal =
-                        require("../utils/staffApplicationModal");
-
-
-                    return modal(
-                        interaction
-                    );
-
-                }
-
-
-
-            } catch(error) {
-
-                console.error(error);
-
-
-                if (!interaction.replied) {
-
-                    await interaction.reply({
-
-                        content:
-                        "❌ Button error.",
-
-                        ephemeral:true
-
-                    });
-
-                }
-
-            }
-
-        }
-
-
-
-        // =========================
-        // CLOSE TICKET MODAL
-        // =========================
-
-        if (
-            interaction.isModalSubmit() &&
-            interaction.customId ===
-            "close_ticket_modal"
-        ) {
-
-
-            const close =
-                require("../utils/closeTicket");
-
-
-            return close(
-                interaction,
-                true
-            );
-
-        }
+        });
 
     }
-};
+
+
+
+    await interaction.editReply({
+
+        content:
+        `✅ Ticket created: ${channel}`
+
+    });
+
+
+    return;
+
+}
