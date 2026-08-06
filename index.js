@@ -175,17 +175,6 @@ if (fs.existsSync(eventsPath)) {
 
 
 
-client.once(
-"ready",
-()=>{
-
-console.log("==============================");
-console.log("🔥 NSC BOT V2 IS ONLINE");
-console.log(`👑 Logged in as: ${client.user.tag}`);
-console.log(`📡 Commands Loaded: ${client.commands.size}`);
-console.log("==============================");
-
-});
 
 
 
