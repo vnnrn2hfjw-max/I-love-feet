@@ -1,70 +1,110 @@
-module.exports = async function claimButton(interaction) {
+const {
+    ModalBuilder,
+    TextInputBuilder,
+    TextInputStyle,
+    ActionRowBuilder
+} = require("discord.js");
 
-    console.log("=== CLAIM BUTTON START ===");
+const { createTranscript } = require("./transcript");
+const fs = require("fs");
+const path = require("path");
+
+const ticketsFile = path.join(__dirname, "tickets.json");
+
+module.exports = async function closeTicket(interaction, modal = false) {
+
+    console.log("=== CLOSE BUTTON PRESSED ===");
+
+    // Show modal
+    if (!modal) {
+
+        const reason = new TextInputBuilder()
+            .setCustomId("reason")
+            .setLabel("Reason for closing")
+            .setStyle(TextInputStyle.Paragraph)
+            .setRequired(true);
+
+        const closeModal = new ModalBuilder()
+            .setCustomId("close_ticket_modal")
+            .setTitle("Close Ticket")
+            .addComponents(
+                new ActionRowBuilder().addComponents(reason)
+            );
+
+        return interaction.showModal(closeModal);
+    }
+
+    await interaction.deferReply({ ephemeral: true });
 
     try {
 
-        await interaction.deferReply({
-            ephemeral: true
+        const reason =
+            interaction.fields.getTextInputValue("reason");
+
+        const transcript =
+            await createTranscript(interaction.channel);
+
+        await interaction.channel.send({
+            content:
+                `🔒 **Ticket Closed**\n\n` +
+                `**Closed by:** ${interaction.user}\n` +
+                `**Reason:** ${reason}`,
+            files: [transcript]
         });
 
-        console.log("Interaction deferred.");
+        // Remove ticket from tickets.json
+        if (fs.existsSync(ticketsFile)) {
 
-        const allowedRoles = [
-            "1502708624487616684",
-            "1502707190358605884",
-            "1526243744289128528"
-        ];
+            const data = JSON.parse(
+                fs.readFileSync(ticketsFile, "utf8")
+            );
 
-        const allowed = interaction.member.roles.cache.some(role =>
-            allowedRoles.includes(role.id)
-        );
+            data.tickets = data.tickets.filter(
+                ticket => ticket.channelId !== interaction.channel.id
+            );
 
-        console.log("Has permission:", allowed);
-
-        if (!allowed) {
-            return interaction.editReply({
-                content: "❌ You don't have permission to claim tickets."
-            });
+            fs.writeFileSync(
+                ticketsFile,
+                JSON.stringify(data, null, 4)
+            );
         }
 
-        const topic = interaction.channel.topic || "";
-
-        console.log("Current topic:", topic);
-
-        if (topic.includes("CLAIMED BY")) {
-            return interaction.editReply({
-                content: "❌ This ticket has already been claimed."
-            });
-        }
-
-        await interaction.channel.setTopic(
-            `CLAIMED BY ${interaction.user.id}`
-        );
-
-        console.log("Topic updated.");
-
-        return interaction.editReply({
-            content: `🟢 Ticket claimed by ${interaction.user}.`
+        await interaction.editReply({
+            content: "✅ Ticket will be deleted in 5 seconds."
         });
+
+        setTimeout(async () => {
+
+            try {
+
+                await interaction.channel.delete();
+
+            } catch (err) {
+
+                console.error("DELETE ERROR:", err);
+
+            }
+
+        }, 5000);
 
     } catch (err) {
 
-        console.error("CLAIM BUTTON ERROR:");
-        console.error(err);
+        console.error("CLOSE ERROR:", err);
 
-        try {
-            if (!interaction.replied && !interaction.deferred) {
-                await interaction.reply({
-                    content: "❌ Failed to claim ticket.",
-                    ephemeral: true
-                });
-            } else {
-                await interaction.editReply({
-                    content: "❌ Failed to claim ticket."
-                });
-            }
-        } catch {}
+        if (!interaction.replied && !interaction.deferred) {
+
+            await interaction.reply({
+                content: "❌ Failed to close ticket.",
+                ephemeral: true
+            }).catch(() => {});
+
+        } else {
+
+            await interaction.editReply({
+                content: "❌ Failed to close ticket."
+            }).catch(() => {});
+
+        }
 
     }
 
