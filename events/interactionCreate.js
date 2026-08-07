@@ -1,4 +1,3 @@
-const handleButtons = require("../utils/button");
 const { createTicketModal } = require("../utils/ticketModals");
 const { createTicket } = require("../utils/createTicket");
 const closeTicket = require("../utils/closeTicket");
@@ -8,6 +7,7 @@ module.exports = {
 
     async execute(interaction, client) {
 
+
         // Slash Commands
         if (interaction.isChatInputCommand()) {
 
@@ -15,28 +15,32 @@ module.exports = {
 
             if (!command) return;
 
-            try {
-                await command.execute(interaction, client);
-            } catch (err) {
-                console.error(err);
 
-                if (interaction.replied || interaction.deferred) {
-                    await interaction.followUp({
-                        content: "❌ Command failed.",
-                        ephemeral: true
-                    }).catch(() => {});
-                } else {
+            try {
+
+                await command.execute(interaction, client);
+
+            } catch (err) {
+
+                console.error("COMMAND ERROR:", err);
+
+                if (!interaction.replied) {
+
                     await interaction.reply({
                         content: "❌ Command failed.",
                         ephemeral: true
                     }).catch(() => {});
+
                 }
+
             }
 
             return;
         }
 
-        // Ticket Menu
+
+
+        // Ticket Select Menu
         if (
             interaction.isStringSelectMenu() &&
             interaction.customId === "ticket_select"
@@ -48,20 +52,25 @@ module.exports = {
 
         }
 
-        // Ticket Modal
+
+
+        // Ticket Creation Modal
         if (
             interaction.isModalSubmit() &&
             interaction.customId.startsWith("ticket_modal_")
         ) {
 
+
             await interaction.deferReply({
                 ephemeral: true
             });
+
 
             const type = interaction.customId.replace(
                 "ticket_modal_",
                 ""
             );
+
 
             try {
 
@@ -69,6 +78,7 @@ module.exports = {
                     interaction,
                     type
                 );
+
 
                 if (!channel) {
 
@@ -79,23 +89,28 @@ module.exports = {
 
                 }
 
+
                 return interaction.editReply({
                     content:
                     `✅ Ticket created: ${channel}`
                 });
 
-            } catch (err) {
 
-                console.error(err);
+            } catch(err) {
+
+                console.error("CREATE TICKET ERROR:", err);
+
 
                 return interaction.editReply({
                     content:
-                    `❌ Ticket creation failed.\n\n${err.message}`
+                    `❌ Ticket creation failed: ${err.message}`
                 });
 
             }
 
         }
+
+
 
         // Close Modal
         if (
@@ -103,40 +118,38 @@ module.exports = {
             interaction.customId === "close_ticket_modal"
         ) {
 
+
             await interaction.deferReply({
                 ephemeral: true
             });
 
+
             try {
 
-                await closeTicket(interaction, true);
+                await closeTicket(
+                    interaction,
+                    true
+                );
+
 
                 return interaction.editReply({
                     content:
                     "✅ Ticket closed."
                 });
 
-            } catch (err) {
+
+            } catch(err) {
 
                 console.error(err);
 
                 return interaction.editReply({
                     content:
-                    `❌ ${err.message}`
+                    "❌ Close failed."
                 });
 
             }
 
         }
 
-        // Buttons
-        if (
-            interaction.isButton()
-        ) {
-
-            return handleButtons(interaction);
-
-        }
-
     }
-}; 
+};
