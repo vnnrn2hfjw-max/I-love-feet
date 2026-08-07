@@ -1,147 +1,135 @@
 module.exports = {
+    name: "interactionCreate",
 
-name:"interactionCreate",
+    async execute(interaction, client) {
 
+        // Slash Commands
+        if (interaction.isChatInputCommand()) {
 
-async execute(interaction,client){
+            const command = client.commands.get(interaction.commandName);
 
+            if (!command) return;
 
+            try {
 
-if(interaction.isChatInputCommand()){
+                await command.execute(interaction, client);
 
+            } catch (error) {
 
-const command =
-client.commands.get(
-interaction.commandName
-);
+                console.error("COMMAND ERROR:", error);
 
+                if (interaction.replied || interaction.deferred) {
 
-if(!command)return;
+                    await interaction.followUp({
+                        content: "❌ An error occurred while executing this command.",
+                        ephemeral: true
+                    }).catch(() => {});
 
+                } else {
 
-try{
+                    await interaction.reply({
+                        content: "❌ An error occurred while executing this command.",
+                        ephemeral: true
+                    }).catch(() => {});
 
-await command.execute(
-interaction,
-client
-);
+                }
 
+            }
 
-}catch(err){
+            return;
+        }
 
-console.error(err);
+        // Ticket Menu
+        if (
+            interaction.isStringSelectMenu() &&
+            interaction.customId === "ticket_select"
+        ) {
 
-}
+            const {
+                createTicketModal
+            } = require("../utils/ticketModals");
 
+            return interaction.showModal(
+                createTicketModal(interaction.values[0])
+            );
+        }
 
-return;
+        // Ticket Modal
+        if (
+            interaction.isModalSubmit() &&
+            interaction.customId.startsWith("ticket_modal_")
+        ) {
 
-}
+            await interaction.deferReply({
+                ephemeral: true
+            });
 
+            const type = interaction.customId.replace(
+                "ticket_modal_",
+                ""
+            );
 
+            const {
+                createTicket
+            } = require("../utils/createTicket");
 
+            try {
 
-if(
-interaction.isStringSelectMenu() &&
-interaction.customId==="ticket_select"
-){
+                const channel = await createTicket(
+                    interaction,
+                    type
+                );
 
-const {
-createTicketModal
-}=require("../utils/ticketModals");
+                if (!channel) {
 
+                    return interaction.editReply({
+                        content: "❌ You already have this ticket open."
+                    });
 
-return interaction.showModal(
+                }
 
-createTicketModal(
-interaction.values[0]
-)
+                return interaction.editReply({
+                    content: `✅ Your ticket has been created: ${channel}`
+                });
 
-);
+            } catch (error) {
 
-}
+                console.error("CREATE TICKET ERROR:", error);
 
+                return interaction.editReply({
+                    content:
+                        `❌ Ticket creation failed.\n\`\`\`\n${error.message}\n\`\`\``
+                });
 
+            }
 
+        }
 
+        // Ticket Buttons
+        if (interaction.isButton()) {
 
-if(
-interaction.isModalSubmit() &&
-interaction.customId.startsWith(
-"ticket_modal_"
-)
-){
+            const handleButton = require("../utils/button");
 
+            try {
 
-await interaction.deferReply({
-ephemeral:true
-});
+                return await handleButton(interaction);
 
+            } catch (error) {
 
-const type =
-interaction.customId.replace(
-"ticket_modal_",
-""
-);
+                console.error("BUTTON ERROR:", error);
 
+                if (!interaction.replied && !interaction.deferred) {
 
+                    await interaction.reply({
+                        content: "❌ Button failed.",
+                        ephemeral: true
+                    }).catch(() => {});
 
-const {
-createTicket
-}=require("../utils/createTicket");
+                }
 
+            }
 
+        }
 
-try{
-
-
-const channel =
-await createTicket(
-interaction,
-type
-);
-
-
-
-if(!channel){
-
-return interaction.editReply({
-
-content:
-"❌ You already have this ticket open."
-
-});
-
-}
-
-
-
-return interaction.editReply({
-
-content:
-`✅ Ticket created: ${channel}`
-
-});
-
-
-}catch(err){
-
-console.error(err);
-
-
-return interaction.editReply({
-
-content:
-"❌ Ticket creation failed."
-
-});
-
-}
-
-
-}
-
-
-}
-
+    }
 };
