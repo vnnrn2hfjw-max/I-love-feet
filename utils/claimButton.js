@@ -1,46 +1,47 @@
 module.exports = async function claimButton(interaction) {
 
+    await interaction.deferReply({
+        ephemeral: true
+    });
 
-    const allowedRoles = [
-        "1502708624487616684",
-        "1502707190358605884",
-        "1526243744289128528"
-    ];
+    try {
 
+        const allowedRoles = [
+            "1502708624487616684",
+            "1502707190358605884",
+            "1526243744289128528"
+        ];
 
-    const allowed =
-    interaction.member.roles.cache.some(
-        role =>
-        allowedRoles.includes(role.id)
-    );
+        const allowed = interaction.member.roles.cache.some(role =>
+            allowedRoles.includes(role.id)
+        );
 
+        if (!allowed) {
+            return interaction.editReply({
+                content: "❌ You cannot claim tickets."
+            });
+        }
 
-    if (!allowed) {
+        await interaction.channel.setTopic(
+            `CLAIMED BY ${interaction.user.id}`
+        );
 
-        return interaction.reply({
+        await interaction.channel.send({
+            content: `🟢 **This ticket has been claimed by ${interaction.user}.**`
+        });
 
-            content:
-            "❌ You cannot claim tickets.",
+        return interaction.editReply({
+            content: "✅ Ticket claimed successfully."
+        });
 
-            ephemeral:true
+    } catch (error) {
 
+        console.error("CLAIM BUTTON ERROR:", error);
+
+        return interaction.editReply({
+            content: `❌ Failed to claim the ticket.\n\`\`\`\n${error.message}\n\`\`\``
         });
 
     }
-
-
-
-    await interaction.channel.setTopic(
-        `CLAIMED BY ${interaction.user.id}`
-    );
-
-
-    return interaction.reply({
-
-        content:
-        `🟢 Ticket claimed by ${interaction.user}`
-
-    });
-
 
 };
