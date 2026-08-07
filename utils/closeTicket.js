@@ -1,61 +1,70 @@
-const claimButton = require("./claimButton");
-const closeTicket = require("./closeTicket");
+module.exports = async function claimButton(interaction) {
 
-module.exports = async function handleButtons(interaction) {
-
-    console.log("=================================");
-    console.log("BUTTON DETECTED");
-    console.log("Custom ID:", interaction.customId);
-    console.log("=================================");
+    console.log("=== CLAIM BUTTON START ===");
 
     try {
 
-        if (interaction.customId === "ticket_claim") {
+        await interaction.deferReply({
+            ephemeral: true
+        });
 
-            console.log("➡ Running claimButton()");
+        console.log("Interaction deferred.");
 
-            return await claimButton(interaction);
+        const allowedRoles = [
+            "1502708624487616684",
+            "1502707190358605884",
+            "1526243744289128528"
+        ];
 
+        const allowed = interaction.member.roles.cache.some(role =>
+            allowedRoles.includes(role.id)
+        );
+
+        console.log("Has permission:", allowed);
+
+        if (!allowed) {
+            return interaction.editReply({
+                content: "❌ You don't have permission to claim tickets."
+            });
         }
 
-        if (interaction.customId === "ticket_close") {
+        const topic = interaction.channel.topic || "";
 
-            console.log("➡ Running closeTicket()");
+        console.log("Current topic:", topic);
 
-            return await closeTicket(interaction);
-
+        if (topic.includes("CLAIMED BY")) {
+            return interaction.editReply({
+                content: "❌ This ticket has already been claimed."
+            });
         }
 
-        console.log("⚠ Unknown button:", interaction.customId);
+        await interaction.channel.setTopic(
+            `CLAIMED BY ${interaction.user.id}`
+        );
 
-    } catch (error) {
+        console.log("Topic updated.");
 
-        console.error("BUTTON ERROR:");
-        console.error(error);
+        return interaction.editReply({
+            content: `🟢 Ticket claimed by ${interaction.user}.`
+        });
+
+    } catch (err) {
+
+        console.error("CLAIM BUTTON ERROR:");
+        console.error(err);
 
         try {
-
             if (!interaction.replied && !interaction.deferred) {
-
                 await interaction.reply({
-                    content: "❌ Button error.",
+                    content: "❌ Failed to claim ticket.",
                     ephemeral: true
                 });
-
             } else {
-
-                await interaction.followUp({
-                    content: "❌ Button error.",
-                    ephemeral: true
+                await interaction.editReply({
+                    content: "❌ Failed to claim ticket."
                 });
-
             }
-
-        } catch (e) {
-
-            console.error("Failed to send button error:", e);
-
-        }
+        } catch {}
 
     }
 
