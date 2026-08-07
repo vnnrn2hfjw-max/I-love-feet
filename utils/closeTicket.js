@@ -5,54 +5,63 @@ const {
     ActionRowBuilder
 } = require("discord.js");
 
-const {
-    createTranscript
-} = require("./transcript");
+const { createTranscript } = require("./transcript");
 
 module.exports = async function closeTicket(interaction, modal = false) {
 
+    // Show the close modal
     if (!modal) {
 
-        const reason = new TextInputBuilder()
+        const reasonInput = new TextInputBuilder()
             .setCustomId("reason")
-            .setLabel("Close reason")
+            .setLabel("Reason for closing")
             .setStyle(TextInputStyle.Paragraph)
             .setRequired(true);
 
-        const form = new ModalBuilder()
+        const modalBuilder = new ModalBuilder()
             .setCustomId("close_ticket_modal")
             .setTitle("Close Ticket")
             .addComponents(
-                new ActionRowBuilder().addComponents(reason)
+                new ActionRowBuilder().addComponents(reasonInput)
             );
 
-        return interaction.showModal(form);
+        return interaction.showModal(modalBuilder);
     }
 
+    // User submitted the modal
     try {
+
+        const reason = interaction.fields.getTextInputValue("reason");
 
         const transcript = await createTranscript(interaction.channel);
 
         await interaction.channel.send({
-            content: `🔒 Ticket closed by ${interaction.user}.`,
+            content:
+                `🔒 **Ticket Closed**\n\n` +
+                `**Closed by:** ${interaction.user}\n` +
+                `**Reason:** ${reason}`,
             files: [transcript]
+        });
+
+        await interaction.editReply({
+            content: "✅ Ticket will be deleted in 5 seconds..."
         });
 
         setTimeout(async () => {
             try {
                 await interaction.channel.delete();
             } catch (err) {
-                console.error("DELETE CHANNEL ERROR:", err);
+                console.error("DELETE ERROR:", err);
             }
-        }, 3000);
+        }, 5000);
 
     } catch (err) {
 
-        console.error("CLOSE TICKET ERROR:", err);
+        console.error("CLOSE ERROR:", err);
 
         if (!interaction.replied && !interaction.deferred) {
             await interaction.reply({
-                content: `❌ Failed to close ticket.\n\`\`\`\n${err.message}\n\`\`\``,
+                content: "❌ Failed to close ticket.",
                 ephemeral: true
             }).catch(() => {});
         }
