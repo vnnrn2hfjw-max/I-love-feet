@@ -1,37 +1,31 @@
 const claimButton = require("./claimButton");
 const closeTicket = require("./closeTicket");
 
-module.exports = async function handleButton(interaction) {
+module.exports = async function handleButtons(interaction) {
 
     try {
 
-        switch (interaction.customId) {
-
-            case "ticket_claim":
-                return await claimButton(interaction);
-
-            case "ticket_close":
-                return await closeTicket(interaction);
-
-            default:
-                return;
-
+        if (interaction.customId === "ticket_claim") {
+            return await claimButton(interaction);
         }
 
-    } catch (err) {
 
-        console.error("BUTTON ERROR:", err);
+        if (interaction.customId === "ticket_close") {
+            return await closeTicket(interaction);
+        }
 
-        if (!interaction.replied && !interaction.deferred) {
+
+    } catch (error) {
+
+        console.error("BUTTON ERROR:", error);
+
+        if (!interaction.replied) {
+
             await interaction.reply({
-                content: "❌ Something went wrong while processing this button.",
+                content: "❌ Button error.",
                 ephemeral: true
             }).catch(() => {});
-        } else {
-            await interaction.followUp({
-                content: "❌ Something went wrong while processing this button.",
-                ephemeral: true
-            }).catch(() => {});
+
         }
 
     }
