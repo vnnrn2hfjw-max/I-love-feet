@@ -8,78 +8,45 @@ module.exports = {
 
     async execute(interaction, client) {
 
-        console.log(
-            `Interaction: ${interaction.type} | ${interaction.customId || interaction.commandName || "Unknown"}`
-        );
+        try {
 
-        // Slash Commands
-        if (interaction.isChatInputCommand()) {
+            // Slash Commands
+            if (interaction.isChatInputCommand()) {
 
-            const command = client.commands.get(interaction.commandName);
+                const command = client.commands.get(interaction.commandName);
 
-            if (!command) return;
+                if (!command) return;
 
-            try {
-
-                await command.execute(interaction, client);
-
-            } catch (err) {
-
-                console.error("COMMAND ERROR:", err);
-
-                if (!interaction.replied && !interaction.deferred) {
-
-                    await interaction.reply({
-                        content: "❌ Command failed.",
-                        ephemeral: true
-                    }).catch(() => {});
-
-                } else {
-
-                    await interaction.followUp({
-                        content: "❌ Command failed.",
-                        ephemeral: true
-                    }).catch(() => {});
-
-                }
+                return await command.execute(interaction, client);
 
             }
 
-            return;
-        }
+            // Ticket Select Menu
+            if (
+                interaction.isStringSelectMenu() &&
+                interaction.customId === "ticket_select"
+            ) {
 
-        // Ticket Select Menu
-        if (
-            interaction.isStringSelectMenu() &&
-            interaction.customId === "ticket_select"
-        ) {
+                return await interaction.showModal(
+                    createTicketModal(interaction.values[0])
+                );
 
-            console.log("Opening ticket modal:", interaction.values[0]);
+            }
 
-            return interaction.showModal(
-                createTicketModal(interaction.values[0])
-            );
+            // Ticket Creation Modal
+            if (
+                interaction.isModalSubmit() &&
+                interaction.customId.startsWith("ticket_modal_")
+            ) {
 
-        }
+                await interaction.deferReply({
+                    ephemeral: true
+                });
 
-        // Ticket Creation Modal
-        if (
-            interaction.isModalSubmit() &&
-            interaction.customId.startsWith("ticket_modal_")
-        ) {
-
-            await interaction.deferReply({
-                ephemeral: true
-            });
-
-            const type = interaction.customId.replace(
-                "ticket_modal_",
-                ""
-            );
-
-            try {
-
-                console.log("Creating ticket:", type);
+                const type = interaction.customId.replace(
+                    "ticket_modal_",
+                    ""
+                );
 
                 const channel = await createTicket(
                     interaction,
@@ -97,64 +64,60 @@ module.exports = {
 
                 return interaction.editReply({
                     content:
-                    `✅ Ticket created: ${channel}`
-                });
-
-            } catch (err) {
-
-                console.error("CREATE TICKET ERROR:", err);
-
-                return interaction.editReply({
-                    content:
-                    `❌ Ticket creation failed.\n\n${err.message}`
-                });
+                    `✅ Your ticket has been created: ${channel}`
+                );
 
             }
 
-        }
+            // Close Ticket Modal
+            if (
+                interaction.isModalSubmit() &&
+                interaction.customId === "close_ticket_modal"
+            ) {
 
-        // Close Ticket Modal
-        if (
-            interaction.isModalSubmit() &&
-            interaction.customId === "close_ticket_modal"
-        ) {
+                return await closeTicket(
+                    interaction,
+                    true
+                );
 
-            await interaction.deferReply({
-                ephemeral: true
-            });
+            }
+
+            // Buttons
+            if (interaction.isButton()) {
+
+                console.log("Button Pressed:", interaction.customId);
+
+                return await handleButtons(interaction);
+
+            }
+
+        } catch (err) {
+
+            console.error("INTERACTION ERROR:");
+            console.error(err);
 
             try {
 
-                console.log("Closing ticket...");
+                if (!interaction.replied && !interaction.deferred) {
 
-                await closeTicket(interaction, true);
+                    await interaction.reply({
+                        content: "❌ Something went wrong.",
+                        ephemeral: true
+                    });
 
-                return interaction.editReply({
-                    content:
-                    "✅ Ticket closed."
-                });
+                } else {
 
-            } catch (err) {
+                    await interaction.followUp({
+                        content: "❌ Something went wrong.",
+                        ephemeral: true
+                    });
 
-                console.error("CLOSE ERROR:", err);
+                }
 
-                return interaction.editReply({
-                    content:
-                    `❌ ${err.message}`
-                });
-
-            }
-
-        }
-
-        // Buttons
-        if (interaction.isButton()) {
-
-            console.log("BUTTON RECEIVED:", interaction.customId);
-
-            return await handleButtons(interaction);
+            } catch {}
 
         }
 
     }
+
 };
