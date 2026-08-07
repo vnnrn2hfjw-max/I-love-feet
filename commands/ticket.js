@@ -7,112 +7,86 @@ const {
 } = require("discord.js");
 
 module.exports = {
-
     data: new SlashCommandBuilder()
         .setName("ticket")
         .setDescription("Open the NSC ticket panel.")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
-
     async execute(interaction) {
 
-        try {
+        const embed = new EmbedBuilder()
+            .setColor("#8B0000")
+            .setTitle("🎟️ NSC | SUPPORT CENTER")
+            .setDescription(`
+Welcome to **NSC | No Second Chances**
 
-            const embed = new EmbedBuilder()
-                .setColor("#8B0000")
-                .setTitle("🎟️ NSC | SUPPORT CENTER")
-                .setDescription(
-`Welcome to **NSC | No Second Chances**
+Please select the type of ticket you would like to open.
 
-Select a ticket type below.
+━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━
+💰 **Buyer Ticket**
+Purchase items or services.
 
-💰 Buyer Ticket
-🛠️ Support Ticket
-🪖 Join NSC
-🤝 Alliance
-🚨 Report
+🛠️ **Support Ticket**
+Need help from staff.
 
-━━━━━━━━━━━━━━`
-                )
-                .setFooter({
-                    text: "NSC | No Second Chances"
-                })
-                .setTimestamp();
+🪖 **Join NSC**
+Apply to join NSC.
 
+🤝 **Alliance**
+Request an alliance.
 
-            const menu = new StringSelectMenuBuilder()
-                .setCustomId("ticket_select")
-                .setPlaceholder("📂 Select ticket type")
-                .addOptions([
+🚨 **Report**
+Report a player or staff member.
 
-                    {
-                        label: "Buyer Ticket",
-                        value: "buyer",
-                        emoji: "💰"
-                    },
+━━━━━━━━━━━━━━━━━━
+            `)
+            .setFooter({
+                text: "NSC | No Second Chances"
+            })
+            .setTimestamp();
 
-                    {
-                        label: "Support Ticket",
-                        value: "support",
-                        emoji: "🛠️"
-                    },
+        const menu = new StringSelectMenuBuilder()
+            .setCustomId("ticket_select")
+            .setPlaceholder("📂 Select a ticket type...")
+            .addOptions([
+                {
+                    label: "Buyer Ticket",
+                    description: "Purchase from NSC.",
+                    emoji: "💰",
+                    value: "buyer"
+                },
+                {
+                    label: "Support Ticket",
+                    description: "Get help from staff.",
+                    emoji: "🛠️",
+                    value: "support"
+                },
+                {
+                    label: "Join NSC",
+                    description: "Apply to join NSC.",
+                    emoji: "🪖",
+                    value: "join"
+                },
+                {
+                    label: "Alliance",
+                    description: "Request an alliance.",
+                    emoji: "🤝",
+                    value: "alliance"
+                },
+                {
+                    label: "Report",
+                    description: "Report a player.",
+                    emoji: "🚨",
+                    value: "report"
+                }
+            ]);
 
-                    {
-                        label: "Join NSC",
-                        value: "join",
-                        emoji: "🪖"
-                    },
+        const row = new ActionRowBuilder().addComponents(menu);
 
-                    {
-                        label: "Alliance",
-                        value: "alliance",
-                        emoji: "🤝"
-                    },
-
-                    {
-                        label: "Report",
-                        value: "report",
-                        emoji: "🚨"
-                    }
-
-                ]);
-
-
-            const row = new ActionRowBuilder()
-                .addComponents(menu);
-
-
-            await interaction.reply({
-
-                embeds: [embed],
-
-                components: [row]
-
-            });
-
-
-        } catch(error) {
-
-            console.error("TICKET COMMAND ERROR:", error);
-
-
-            if (!interaction.replied) {
-
-                await interaction.reply({
-
-                    content:
-                    "❌ Ticket command crashed.",
-
-                    ephemeral: true
-
-                }).catch(()=>{});
-
-            }
-
-        }
-
+        await interaction.reply({
+            embeds: [embed],
+            components: [row]
+        });
     }
-
 };
