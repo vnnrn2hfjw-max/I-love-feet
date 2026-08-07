@@ -1,3 +1,8 @@
+const handleButtons = require("../utils/button");
+const { createTicketModal } = require("../utils/ticketModals");
+const { createTicket } = require("../utils/createTicket");
+const closeTicket = require("../utils/closeTicket");
+
 module.exports = {
     name: "interactionCreate",
 
@@ -11,29 +16,21 @@ module.exports = {
             if (!command) return;
 
             try {
-
                 await command.execute(interaction, client);
-
-            } catch (error) {
-
-                console.error("COMMAND ERROR:", error);
+            } catch (err) {
+                console.error(err);
 
                 if (interaction.replied || interaction.deferred) {
-
                     await interaction.followUp({
-                        content: "❌ An error occurred while executing this command.",
+                        content: "❌ Command failed.",
                         ephemeral: true
                     }).catch(() => {});
-
                 } else {
-
                     await interaction.reply({
-                        content: "❌ An error occurred while executing this command.",
+                        content: "❌ Command failed.",
                         ephemeral: true
                     }).catch(() => {});
-
                 }
-
             }
 
             return;
@@ -45,13 +42,10 @@ module.exports = {
             interaction.customId === "ticket_select"
         ) {
 
-            const {
-                createTicketModal
-            } = require("../utils/ticketModals");
-
             return interaction.showModal(
                 createTicketModal(interaction.values[0])
             );
+
         }
 
         // Ticket Modal
@@ -69,10 +63,6 @@ module.exports = {
                 ""
             );
 
-            const {
-                createTicket
-            } = require("../utils/createTicket");
-
             try {
 
                 const channel = await createTicket(
@@ -83,53 +73,70 @@ module.exports = {
                 if (!channel) {
 
                     return interaction.editReply({
-                        content: "❌ You already have this ticket open."
+                        content:
+                        "❌ You already have this ticket open."
                     });
 
                 }
 
                 return interaction.editReply({
-                    content: `✅ Your ticket has been created: ${channel}`
+                    content:
+                    `✅ Ticket created: ${channel}`
                 });
 
-            } catch (error) {
+            } catch (err) {
 
-                console.error("CREATE TICKET ERROR:", error);
+                console.error(err);
 
                 return interaction.editReply({
                     content:
-                        `❌ Ticket creation failed.\n\`\`\`\n${error.message}\n\`\`\``
+                    `❌ Ticket creation failed.\n\n${err.message}`
                 });
 
             }
 
         }
 
-        // Ticket Buttons
-        if (interaction.isButton()) {
+        // Close Modal
+        if (
+            interaction.isModalSubmit() &&
+            interaction.customId === "close_ticket_modal"
+        ) {
 
-            const handleButton = require("../utils/button");
+            await interaction.deferReply({
+                ephemeral: true
+            });
 
             try {
 
-                return await handleButton(interaction);
+                await closeTicket(interaction, true);
 
-            } catch (error) {
+                return interaction.editReply({
+                    content:
+                    "✅ Ticket closed."
+                });
 
-                console.error("BUTTON ERROR:", error);
+            } catch (err) {
 
-                if (!interaction.replied && !interaction.deferred) {
+                console.error(err);
 
-                    await interaction.reply({
-                        content: "❌ Button failed.",
-                        ephemeral: true
-                    }).catch(() => {});
-
-                }
+                return interaction.editReply({
+                    content:
+                    `❌ ${err.message}`
+                });
 
             }
+
+        }
+
+        // Buttons
+        if (
+            interaction.isButton()
+        ) {
+
+            return handleButtons(interaction);
 
         }
 
     }
-};
+}; 
