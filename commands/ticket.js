@@ -7,89 +7,112 @@ const {
 } = require("discord.js");
 
 module.exports = {
+
     data: new SlashCommandBuilder()
         .setName("ticket")
         .setDescription("Open the NSC ticket panel.")
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
+
     async execute(interaction) {
 
-        const embed = new EmbedBuilder()
-            .setColor("#8B0000")
-            .setTitle("🎟️ NSC | SUPPORT CENTER")
-            .setDescription(
-`Welcome to **NSC | No Second Chances**.
+        try {
 
-Please choose a ticket type from the menu below.
+            const embed = new EmbedBuilder()
+                .setColor("#8B0000")
+                .setTitle("🎟️ NSC | SUPPORT CENTER")
+                .setDescription(
+`Welcome to **NSC | No Second Chances**
 
-━━━━━━━━━━━━━━━━━━
+Select a ticket type below.
 
-💰 **Buyer Ticket**
-Purchase items or services.
+━━━━━━━━━━━━━━
 
-🛠️ **Support Ticket**
-Need help from staff.
+💰 Buyer Ticket
+🛠️ Support Ticket
+🪖 Join NSC
+🤝 Alliance
+🚨 Report
 
-🪖 **Join NSC**
-Join the gang.
+━━━━━━━━━━━━━━`
+                )
+                .setFooter({
+                    text: "NSC | No Second Chances"
+                })
+                .setTimestamp();
 
-🤝 **Alliance**
-Request an alliance.
 
-🚨 **Report**
-Report a player.
-
-━━━━━━━━━━━━━━━━━━`
-            )
-            .setFooter({
-                text: "NSC | No Second Chances"
-            })
-            .setTimestamp();
-
-        const menu =
-            new StringSelectMenuBuilder()
+            const menu = new StringSelectMenuBuilder()
                 .setCustomId("ticket_select")
-                .setPlaceholder("📂 Select a ticket type...")
+                .setPlaceholder("📂 Select ticket type")
                 .addOptions([
+
                     {
                         label: "Buyer Ticket",
-                        description: "Purchase from NSC.",
-                        emoji: "💰",
-                        value: "buyer"
+                        value: "buyer",
+                        emoji: "💰"
                     },
+
                     {
                         label: "Support Ticket",
-                        description: "Get help from staff.",
-                        emoji: "🛠️",
-                        value: "support"
+                        value: "support",
+                        emoji: "🛠️"
                     },
+
                     {
                         label: "Join NSC",
-                        description: "Apply to join NSC.",
-                        emoji: "🪖",
-                        value: "join"
+                        value: "join",
+                        emoji: "🪖"
                     },
+
                     {
                         label: "Alliance",
-                        description: "Request an alliance.",
-                        emoji: "🤝",
-                        value: "alliance"
+                        value: "alliance",
+                        emoji: "🤝"
                     },
+
                     {
                         label: "Report",
-                        description: "Report a player.",
-                        emoji: "🚨",
-                        value: "report"
+                        value: "report",
+                        emoji: "🚨"
                     }
+
                 ]);
 
-        const row =
-            new ActionRowBuilder()
+
+            const row = new ActionRowBuilder()
                 .addComponents(menu);
 
-        await interaction.reply({
-            embeds: [embed],
-            components: [row]
-        });
+
+            await interaction.reply({
+
+                embeds: [embed],
+
+                components: [row]
+
+            });
+
+
+        } catch(error) {
+
+            console.error("TICKET COMMAND ERROR:", error);
+
+
+            if (!interaction.replied) {
+
+                await interaction.reply({
+
+                    content:
+                    "❌ Ticket command crashed.",
+
+                    ephemeral: true
+
+                }).catch(()=>{});
+
+            }
+
+        }
+
     }
+
 };
