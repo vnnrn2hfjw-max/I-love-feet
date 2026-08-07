@@ -1,6 +1,5 @@
 const {
     ChannelType,
-    PermissionFlagsBits,
     EmbedBuilder,
     ActionRowBuilder,
     ButtonBuilder,
@@ -52,104 +51,80 @@ const TYPES = {
 };
 
 
-
 async function createTicket(interaction, type) {
 
-
-    const ticket =
-        TYPES[type];
-
+    const ticket = TYPES[type];
 
     if (!ticket) {
-        throw new Error("Invalid ticket type");
+        throw new Error("Invalid ticket type.");
     }
 
 
-
-    if (
-        hasOpenTicket(
-            interaction.user.id,
-            type
-        )
-    ) {
-
+    if (hasOpenTicket(interaction.user.id, type)) {
         return false;
-
     }
 
 
-
-    let info =
-    "No information provided.";
-
+    let info = "No information provided.";
 
     if (interaction.fields) {
 
-        info =
-        [...interaction.fields.fields.values()]
-        .map(field =>
-            `**${field.customId}**\n${field.value}`
-        )
-        .join("\n\n");
+        info = [...interaction.fields.fields.values()]
+            .map(field =>
+                `**${field.customId}**\n${field.value}`
+            )
+            .join("\n\n");
 
     }
 
 
+    const channel = await interaction.guild.channels.create({
 
-    const channel =
-    await interaction.guild.channels.create({
+        name: `${ticket.emoji}-${getChannelName(type)}`,
 
-        name:
-        `${ticket.emoji}-${getChannelName(type)}`,
+        type: ChannelType.GuildText,
 
-        type:
-        ChannelType.GuildText,
-
-        parent:
-        CATEGORY_ID,
-
-
-        permissionOverwrites:[
-
-            {
-                id:
-                interaction.guild.id,
-
-                deny:[
-                    PermissionFlagsBits.ViewChannel
-                ]
-            },
-
-            {
-                id:
-                interaction.user.id,
-
-                allow:[
-
-                    PermissionFlagsBits.ViewChannel,
-                    PermissionFlagsBits.SendMessages,
-                    PermissionFlagsBits.ReadMessageHistory
-
-                ]
-            },
-
-            {
-                id:
-                ticket.role,
-
-                allow:[
-
-                    PermissionFlagsBits.ViewChannel,
-                    PermissionFlagsBits.SendMessages,
-                    PermissionFlagsBits.ReadMessageHistory
-
-                ]
-            }
-
-        ]
+        parent: CATEGORY_ID
 
     });
 
+
+    await channel.permissionOverwrites.edit(
+        interaction.guild.id,
+        {
+            ViewChannel: false
+        }
+    );
+
+
+    await channel.permissionOverwrites.edit(
+        interaction.user.id,
+        {
+            ViewChannel: true,
+            SendMessages: true,
+            ReadMessageHistory: true
+        }
+    );
+
+
+    if (ticket.role) {
+
+        const role = interaction.guild.roles.cache.get(ticket.role);
+
+        if (role) {
+
+            await channel.permissionOverwrites.edit(
+                role.id,
+                {
+                    ViewChannel: true,
+                    SendMessages: true,
+                    ReadMessageHistory: true
+                }
+            );
+
+        }
+
+    }
 
 
     addOpenTicket(
@@ -159,18 +134,15 @@ async function createTicket(interaction, type) {
     );
 
 
+    const embed = new EmbedBuilder()
 
-    const embed =
-    new EmbedBuilder()
+        .setColor("#8B0000")
 
-    .setColor("#8B0000")
+        .setTitle(
+            `${ticket.emoji} ${ticket.name}`
+        )
 
-    .setTitle(
-        `${ticket.emoji} ${ticket.name}`
-    )
-
-    .setDescription(
-
+        .setDescription(
 `Welcome ${interaction.user}
 
 Staff will assist you soon.
@@ -180,79 +152,44 @@ Staff will assist you soon.
 ${info}
 
 ━━━━━━━━━━━━━━`
-
-    )
-
-    .setTimestamp();
-
-
-
-    const buttons =
-    new ActionRowBuilder()
-    .addComponents(
-
-        new ButtonBuilder()
-
-        .setCustomId(
-            "ticket_claim"
         )
 
-        .setLabel(
-            "Claim"
-        )
-
-        .setEmoji(
-            "🟢"
-        )
-
-        .setStyle(
-            ButtonStyle.Success
-        ),
+        .setTimestamp();
 
 
-        new ButtonBuilder()
+    const buttons = new ActionRowBuilder()
+        .addComponents(
 
-        .setCustomId(
-            "ticket_close"
-        )
+            new ButtonBuilder()
+                .setCustomId("ticket_claim")
+                .setLabel("Claim")
+                .setEmoji("🟢")
+                .setStyle(ButtonStyle.Success),
 
-        .setLabel(
-            "Close"
-        )
 
-        .setEmoji(
-            "🔴"
-        )
+            new ButtonBuilder()
+                .setCustomId("ticket_close")
+                .setLabel("Close")
+                .setEmoji("🔴")
+                .setStyle(ButtonStyle.Danger)
 
-        .setStyle(
-            ButtonStyle.Danger
-        )
-
-    );
-
+        );
 
 
     await channel.send({
 
-        content:
-        `<@&${ticket.role}> ${interaction.user}`,
+        content: `${interaction.user}`,
 
-        embeds:[
-            embed
-        ],
+        embeds: [embed],
 
-        components:[
-            buttons
-        ]
+        components: [buttons]
 
     });
-
 
 
     return channel;
 
 }
-
 
 
 module.exports = {
