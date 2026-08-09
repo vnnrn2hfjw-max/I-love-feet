@@ -1,13 +1,1 @@
-{
-  "name": "nsc-bot",
-  "version": "2.0.0",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  },
-  "dependencies": {
-    "discord.js": "^14.16.3",
-    "dotenv": "^16.4.5",
-    "ms": "^2.1.3"
-  }
-}
+
